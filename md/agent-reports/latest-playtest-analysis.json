@@ -1,0 +1,23 @@
+{
+  "logPath": "md/playtest-logs/latest-playtest.jsonl",
+  "levelId": "prototype",
+  "width": 7,
+  "height": 7,
+  "tileTypes": 5,
+  "moveLimit": 20,
+  "targetScore": 1400,
+  "result": "unfinished",
+  "finalScore": 250,
+  "movesUsed": 1,
+  "validMoves": 1,
+  "invalidMoves": 3,
+  "averageChainLength": 5.00,
+  "averageScorePerValidMove": 250.00,
+  "suggestion": {
+    "difficulty": "Readability Risk",
+    "diagnosis": "Many short invalid releases happened during play.",
+    "risk": "Players may not understand which hex neighbors are valid.",
+    "action": "Improve selected-chain feedback and consider hinting valid next tiles."
+  },
+  "evidenceNote": "Unity batchmode could not run analyze-playlog while the same project was open in the editor; values mirror the current PokoPuzzleCli PlayLogAnalysis rules."
+}

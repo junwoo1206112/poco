@@ -1,0 +1,38 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+context: |
+  Project: Unity 6000.3 2D portfolio prototype for a PokoPang-inspired Line-Linker puzzle.
+  Goal: show Trinode AX-relevant Unity, AI-assisted development, and casual puzzle production ability.
+  Tech stack: Unity 2D, C#, URP 2D, Unity Input System package.
+  Gameplay focus: connect adjacent same-type tiles by drag, clear chains of 3+, collapse/refill the board, score, and expose tuning data.
+  AI focus: a Game Designer Agent analyzes board/play telemetry and produces readable difficulty and tuning suggestions.
+  Documentation: keep planning, rationale, tuning reports, and AI-agent evidence in md/.
+  IP constraint: do not copy PokoPang protected art, names, characters, sounds, or exact UI. Recreate only mechanic-inspired behavior with original placeholder assets.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Keep the Trinode AX portfolio angle explicit.
+    - Include non-goals when a change could drift into a larger puzzle framework.
+  design:
+    - Prefer small Unity runtime scripts and explicit data contracts over editor-heavy tooling.
+    - Mention how the implementation will leave portfolio evidence.
+  tasks:
+    - Keep tasks small enough to finish and verify in one Unity play-test session.
+    - Include a verification task for Unity console errors and playability.
