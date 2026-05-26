@@ -2,6 +2,7 @@
 
 - [x] 1.1 Replace `CreateCircleSprite()` in `LineLinkerBoard.cs` with `CreateHexSprite()` that draws a hex-shaped white mask on a runtime Texture2D.
 - [x] 1.2 Replace `CircleCollider2D` with `PolygonCollider2D` on `PokoTile` and set six vertices matching the hex sprite silhouette.
+- [x] 1.3 Add `--tileVisual circle-in-hex` scene creation support for a colored circle inside a visible hexagonal frame.
 
 ## 2. Hex Board Shape (PokoPang 3-4 pattern)
 
@@ -19,6 +20,11 @@
 - [x] 2.12 Remove `useHexGrid` from CLI `CountSameNeighbors`, `FindLongestChain`, `CountPossibleChains`.
 - [x] 2.13 Fix `ToWorld` centering: per-row centering using `RowSize(row)` instead of global `width`.
 - [x] 2.14 Odd-R offset changed to -0.5 (odd rows shift left instead of right).
+- [x] 2.15 Tune default spacing to `0.74` so adjacent pointy-top hex frames visually join into one puzzle board.
+- [x] 2.16 Keep vertical spacing ratio at `0.8660254` so the 3-4-3-4 row-offset board interlocks as pointy-top hex tiling.
+- [x] 2.17 Rotate runtime sprite and collider vertices by 30 degrees so visuals match row-offset pointy-top hex geometry.
+- [x] 2.18 Fix collapse/refill to drop only through valid cells in each column so the 3-4-3-4 silhouette survives after clears.
+- [x] 2.19 Disable random special subtype tinting in the core prototype so each normal tile type keeps one color-shape identity.
 
 ## 3. Unity Verification
 

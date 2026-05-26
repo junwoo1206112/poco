@@ -11,8 +11,10 @@ namespace PokoPuzzle.Core
         [SerializeField] private int tileTypes = 5;
         [SerializeField] private bool useHexGrid = true;
         [SerializeField] private int moveLimit = 20;
-        [SerializeField] private int targetScore = 2200;
+        [SerializeField] private int targetScore = 2500;
         [SerializeField] private int[] spawnWeights = { 100, 100, 100, 100, 100 };
+        [SerializeField] private int regularEnemyHp;
+        [SerializeField] private int bossHp;
 
         public string LevelId => levelId;
         public int Width => width;
@@ -22,8 +24,10 @@ namespace PokoPuzzle.Core
         public int MoveLimit => moveLimit;
         public int TargetScore => targetScore;
         public int[] SpawnWeights => spawnWeights;
+        public int RegularEnemyHp => regularEnemyHp;
+        public int BossHp => bossHp;
 
-        public void Configure(string newLevelId, int newWidth, int newHeight, int newTileTypes, bool newUseHexGrid, int newMoveLimit, int newTargetScore, int[] newSpawnWeights)
+        public void Configure(string newLevelId, int newWidth, int newHeight, int newTileTypes, bool newUseHexGrid, int newMoveLimit, int newTargetScore, int[] newSpawnWeights, int newRegularEnemyHp = 0, int newBossHp = 0)
         {
             levelId = newLevelId;
             width = Mathf.Max(3, newWidth);
@@ -33,6 +37,8 @@ namespace PokoPuzzle.Core
             moveLimit = Mathf.Max(1, newMoveLimit);
             targetScore = Mathf.Max(100, newTargetScore);
             spawnWeights = NormalizeWeights(newSpawnWeights, tileTypes);
+            regularEnemyHp = Mathf.Max(0, newRegularEnemyHp);
+            bossHp = Mathf.Max(0, newBossHp);
         }
 
         private static int[] NormalizeWeights(int[] source, int count)

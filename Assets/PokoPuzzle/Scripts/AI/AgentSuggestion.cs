@@ -10,7 +10,9 @@ namespace PokoPuzzle.AI
             string recommendedAction,
             int suggestedMoveLimit,
             int suggestedTargetScore,
-            int suggestedTileTypes)
+            int suggestedTileTypes,
+            int suggestedRegularEnemyHp = 0,
+            int suggestedBossHp = 0)
         {
             DifficultyLabel = difficultyLabel;
             Summary = summary;
@@ -20,6 +22,8 @@ namespace PokoPuzzle.AI
             SuggestedMoveLimit = suggestedMoveLimit;
             SuggestedTargetScore = suggestedTargetScore;
             SuggestedTileTypes = suggestedTileTypes;
+            SuggestedRegularEnemyHp = suggestedRegularEnemyHp;
+            SuggestedBossHp = suggestedBossHp;
         }
 
         public string DifficultyLabel { get; }
@@ -30,5 +34,7 @@ namespace PokoPuzzle.AI
         public int SuggestedMoveLimit { get; }
         public int SuggestedTargetScore { get; }
         public int SuggestedTileTypes { get; }
+        public int SuggestedRegularEnemyHp { get; }
+        public int SuggestedBossHp { get; }
     }
 }

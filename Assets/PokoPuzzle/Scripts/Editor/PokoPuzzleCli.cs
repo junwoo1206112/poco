@@ -5,11 +5,12 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using PokoPuzzle.AI;
-using PokoPuzzle.Core;
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEngine;
+using PokoPuzzle.AI;
+using PokoPuzzle.Core;
+using PokoPuzzle.Core.Data;
 
 namespace PokoPuzzle.Editor
 {
@@ -24,7 +25,8 @@ namespace PokoPuzzle.Editor
                 args.GetInt("height", PokoPrototypeSceneSettings.Default.Height),
                 args.GetInt("tileTypes", PokoPrototypeSceneSettings.Default.TileTypes),
                 args.GetFloat("spacing", PokoPrototypeSceneSettings.Default.Spacing),
-                args.GetLayout("layout", PokoPrototypeSceneSettings.Default.UseHexGrid));
+                args.GetLayout("layout", PokoPrototypeSceneSettings.Default.UseHexGrid),
+                args.GetTileVisualStyle("tileVisual", PokoPrototypeSceneSettings.Default.TileVisualStyle));
 
             PokoPrototypeSceneBuilder.CreatePrototypeScene(settings);
             WriteCoreBoardReport(settings, args.GetString("reportPath", "md/cli-reports/core-board-input.md"));
@@ -50,6 +52,7 @@ namespace PokoPuzzle.Editor
             var tileTypes = serializedBoard.FindProperty("tileTypes").intValue;
             var spacing = serializedBoard.FindProperty("spacing").floatValue;
             var useHexGrid = serializedBoard.FindProperty("useHexGrid").boolValue;
+            var tileVisualStyle = (PokoTileVisualStyle)serializedBoard.FindProperty("tileVisualStyle").enumValueIndex;
             var boardCamera = serializedBoard.FindProperty("boardCamera").objectReferenceValue;
             var linkLine = serializedBoard.FindProperty("linkLine").objectReferenceValue;
             var scoreText = serializedBoard.FindProperty("scoreText").objectReferenceValue;
@@ -90,7 +93,7 @@ namespace PokoPuzzle.Editor
             }
 
             ValidateAdjacency();
-            WriteValidationReport(scenePath, width, height, tileTypes, spacing, useHexGrid, reportPath);
+            WriteValidationReport(scenePath, width, height, tileTypes, spacing, useHexGrid, tileVisualStyle, reportPath);
             Debug.Log($"Poko CLI validated core board scene: {scenePath}");
         }
 
@@ -240,7 +243,9 @@ namespace PokoPuzzle.Editor
                 true,
                 analysis.SuggestedMoveLimit,
                 analysis.SuggestedTargetScore,
-                spawnWeights);
+                spawnWeights,
+                analysis.SuggestedRegularEnemyHp,
+                analysis.SuggestedBossHp);
 
             SaveLevelAsset(assetPath, levelConfig);
             WriteRetunedLevelMarkdown(reportPath, logPath, assetPath, analysis, levelConfig, spawnWeights);
@@ -394,6 +399,12 @@ namespace PokoPuzzle.Editor
             Debug.Log($"Poko CLI saved LLM designer review: {reportPath}");
         }
 
+        public static void ConvertExcelData()
+        {
+            ExcelDataGenerator.ConvertAll();
+            Debug.Log("Poko CLI converted Excel data into ScriptableObject databases.");
+        }
+
         private static void WriteCoreBoardReport(PokoPrototypeSceneSettings settings, string reportPath)
         {
             var body =
@@ -404,6 +415,7 @@ namespace PokoPuzzle.Editor
                 $"- Tile types: `{settings.TileTypes}`\n" +
                 $"- Tile spacing: `{settings.Spacing.ToString(CultureInfo.InvariantCulture)}`\n" +
                 $"- Layout: `{LayoutName(settings.UseHexGrid)}`\n" +
+                $"- Tile visual: `{TileVisualName(settings.TileVisualStyle)}`\n" +
                 $"- Neighbor directions: `{HexGridUtility.GetNeighborCount()}`\n\n" +
                 "## Poko-style Criteria\n\n" +
                 "- The default board uses an odd-row offset hex grid.\n" +
@@ -417,7 +429,7 @@ namespace PokoPuzzle.Editor
             WriteReport(reportPath, body);
         }
 
-        private static void WriteValidationReport(string scenePath, int width, int height, int tileTypes, float spacing, bool useHexGrid, string reportPath)
+        private static void WriteValidationReport(string scenePath, int width, int height, int tileTypes, float spacing, bool useHexGrid, PokoTileVisualStyle tileVisualStyle, string reportPath)
         {
             var body =
                 "# Core Board & Input CLI Validation Report\n\n" +
@@ -428,6 +440,7 @@ namespace PokoPuzzle.Editor
                 $"- Tile types: `{tileTypes}`\n" +
                 $"- Tile spacing: `{spacing.ToString(CultureInfo.InvariantCulture)}`\n" +
                 $"- Layout: `{LayoutName(useHexGrid)}`\n" +
+                $"- Tile visual: `{TileVisualName(tileVisualStyle)}`\n" +
                 $"- Neighbor directions: `{HexGridUtility.GetNeighborCount()}`\n\n" +
                 "## Checks\n\n" +
                 "- `LineLinkerBoard` component exists.\n" +
@@ -694,12 +707,22 @@ namespace PokoPuzzle.Editor
                 $"- Valid moves: `{analysis.ValidMoves}`\n" +
                 $"- Invalid short releases: `{analysis.InvalidMoves}`\n" +
                 $"- Average chain length: `{analysis.AverageChainLength.ToString("0.00", CultureInfo.InvariantCulture)}`\n" +
-                $"- Average score per valid move: `{analysis.AverageScorePerValidMove.ToString("0.00", CultureInfo.InvariantCulture)}`\n\n" +
-                "## Designer Agent Judgment\n\n" +
+                 $"- Average score per valid move: `{analysis.AverageScorePerValidMove.ToString("0.00", CultureInfo.InvariantCulture)}`\n\n" +
+                 "## Combat Telemetry\n\n" +
+                 $"- Max combo: `{analysis.MaxCombo}`\n" +
+                 $"- Fever triggers: `{analysis.FeverTriggers}`\n" +
+                 $"- Total damage dealt: `{analysis.TotalDamageDealt}`\n" +
+                 $"- Bombs generated: `{analysis.BombsGenerated}`\n" +
+                 $"- Bombs detonated: `{analysis.BombsDetonated}`\n" +
+                 $"- Special blocks cleared: `{analysis.SpecialBlocksCleared}`\n" +
+                 $"- Rainbow tiles cleared: `{analysis.RainbowCleared}`\n\n" +
+                 "## Designer Agent Judgment\n\n" +
                 $"- Difficulty: `{analysis.DifficultyLabel}`\n" +
                 $"- Diagnosis: {analysis.Diagnosis}\n" +
                 $"- Risk: {analysis.Risk}\n" +
-                $"- Action: {analysis.Action}\n";
+                $"- Action: {analysis.Action}\n" +
+                $"- Suggested regular enemy HP: `{analysis.SuggestedRegularEnemyHp}`\n" +
+                $"- Suggested boss HP: `{analysis.SuggestedBossHp}`\n";
 
             WriteReport(reportPath, body);
         }
@@ -721,12 +744,21 @@ namespace PokoPuzzle.Editor
                 $"  \"validMoves\": {analysis.ValidMoves},\n" +
                 $"  \"invalidMoves\": {analysis.InvalidMoves},\n" +
                 $"  \"averageChainLength\": {analysis.AverageChainLength.ToString("0.00", CultureInfo.InvariantCulture)},\n" +
-                $"  \"averageScorePerValidMove\": {analysis.AverageScorePerValidMove.ToString("0.00", CultureInfo.InvariantCulture)},\n" +
-                "  \"suggestion\": {\n" +
+                 $"  \"averageScorePerValidMove\": {analysis.AverageScorePerValidMove.ToString("0.00", CultureInfo.InvariantCulture)},\n" +
+                 $"  \"maxCombo\": {analysis.MaxCombo},\n" +
+                 $"  \"feverTriggers\": {analysis.FeverTriggers},\n" +
+                 $"  \"totalDamageDealt\": {analysis.TotalDamageDealt},\n" +
+                 $"  \"bombsGenerated\": {analysis.BombsGenerated},\n" +
+                 $"  \"bombsDetonated\": {analysis.BombsDetonated},\n" +
+                 $"  \"specialBlocksCleared\": {analysis.SpecialBlocksCleared},\n" +
+                 $"  \"rainbowCleared\": {analysis.RainbowCleared},\n" +
+                 "  \"suggestion\": {\n" +
                 $"    \"difficulty\": \"{EscapeJson(analysis.DifficultyLabel)}\",\n" +
                 $"    \"diagnosis\": \"{EscapeJson(analysis.Diagnosis)}\",\n" +
                 $"    \"risk\": \"{EscapeJson(analysis.Risk)}\",\n" +
-                $"    \"action\": \"{EscapeJson(analysis.Action)}\"\n" +
+                $"    \"action\": \"{EscapeJson(analysis.Action)}\",\n" +
+                $"    \"suggestedRegularEnemyHp\": {analysis.SuggestedRegularEnemyHp},\n" +
+                $"    \"suggestedBossHp\": {analysis.SuggestedBossHp}\n" +
                 "  }\n" +
                 "}\n";
 
@@ -749,6 +781,8 @@ namespace PokoPuzzle.Editor
                 $"- Tile types: `{levelConfig.TileTypes}`\n" +
                 $"- Move limit: `{levelConfig.MoveLimit}`\n" +
                 $"- Target score: `{levelConfig.TargetScore}`\n" +
+                $"- Regular enemy HP: `{levelConfig.RegularEnemyHp}`\n" +
+                $"- Boss HP: `{levelConfig.BossHp}`\n" +
                 $"- Spawn weights: `{FormatWeights(spawnWeights)}`\n\n" +
                 "## Agent Reasoning\n\n" +
                 $"{analysis.Action}\n";
@@ -770,6 +804,8 @@ namespace PokoPuzzle.Editor
                 $"  \"tileTypes\": {levelConfig.TileTypes},\n" +
                 $"  \"moveLimit\": {levelConfig.MoveLimit},\n" +
                 $"  \"targetScore\": {levelConfig.TargetScore},\n" +
+                $"  \"regularEnemyHp\": {levelConfig.RegularEnemyHp},\n" +
+                $"  \"bossHp\": {levelConfig.BossHp},\n" +
                 $"  \"spawnWeights\": [{FormatWeights(spawnWeights)}],\n" +
                 $"  \"reason\": \"{EscapeJson(analysis.Action)}\"\n" +
                 "}\n";
@@ -782,6 +818,13 @@ namespace PokoPuzzle.Editor
             var controlTileTypes = Mathf.Clamp(analysis.SuggestedTileTypes, 3, 6);
             var readabilityTileTypes = Mathf.Max(3, controlTileTypes - 1);
             var comboTileTypes = Mathf.Max(3, controlTileTypes - 1);
+
+            var controlRegHp = analysis.SuggestedRegularEnemyHp;
+            var controlBossHp = analysis.SuggestedBossHp;
+            var readabilityRegHp = controlRegHp > 0 ? Mathf.CeilToInt(controlRegHp * 0.8f) : 0;
+            var readabilityBossHp = controlBossHp > 0 ? Mathf.CeilToInt(controlBossHp * 0.8f) : 0;
+            var comboRegHp = controlRegHp > 0 ? Mathf.CeilToInt(controlRegHp * 1.2f) : 0;
+            var comboBossHp = controlBossHp > 0 ? Mathf.CeilToInt(controlBossHp * 1.2f) : 0;
 
             return new[]
             {
@@ -796,7 +839,9 @@ namespace PokoPuzzle.Editor
                     controlTileTypes,
                     analysis.SuggestedMoveLimit,
                     analysis.SuggestedTargetScore,
-                    BuildSpawnWeights(controlTileTypes, analysis.DifficultyLabel)),
+                    BuildSpawnWeights(controlTileTypes, analysis.DifficultyLabel),
+                    controlRegHp,
+                    controlBossHp),
                 CreateExperimentVariant(
                     experimentId,
                     assetRoot,
@@ -808,7 +853,9 @@ namespace PokoPuzzle.Editor
                     readabilityTileTypes,
                     analysis.SuggestedMoveLimit + 2,
                     Mathf.Max(600, analysis.SuggestedTargetScore - 100),
-                    BuildAssistedSpawnWeights(readabilityTileTypes)),
+                    BuildAssistedSpawnWeights(readabilityTileTypes),
+                    readabilityRegHp,
+                    readabilityBossHp),
                 CreateExperimentVariant(
                     experimentId,
                     assetRoot,
@@ -820,7 +867,9 @@ namespace PokoPuzzle.Editor
                     comboTileTypes,
                     Mathf.Max(8, analysis.SuggestedMoveLimit - 1),
                     analysis.SuggestedTargetScore + 300,
-                    BuildAssistedSpawnWeights(comboTileTypes))
+                    BuildAssistedSpawnWeights(comboTileTypes),
+                    comboRegHp,
+                    comboBossHp)
             };
         }
 
@@ -835,7 +884,9 @@ namespace PokoPuzzle.Editor
             int tileTypes,
             int moveLimit,
             int targetScore,
-            int[] spawnWeights)
+            int[] spawnWeights,
+            int regularEnemyHp = 0,
+            int bossHp = 0)
         {
             var levelId = $"{experimentId}_{suffix}";
             var assetPath = $"{assetRoot}/{levelId}.asset";
@@ -848,7 +899,9 @@ namespace PokoPuzzle.Editor
                 true,
                 moveLimit,
                 targetScore,
-                spawnWeights);
+                spawnWeights,
+                regularEnemyHp,
+                bossHp);
 
             return new LevelExperimentVariant(suffix, focus, hypothesis, metric, assetPath, levelConfig, spawnWeights);
         }
@@ -889,6 +942,8 @@ namespace PokoPuzzle.Editor
                 body.AppendLine($"- Tile types: `{variant.LevelConfig.TileTypes}`");
                 body.AppendLine($"- Move limit: `{variant.LevelConfig.MoveLimit}`");
                 body.AppendLine($"- Target score: `{variant.LevelConfig.TargetScore}`");
+                body.AppendLine($"- Regular enemy HP: `{variant.LevelConfig.RegularEnemyHp}`");
+                body.AppendLine($"- Boss HP: `{variant.LevelConfig.BossHp}`");
                 body.AppendLine($"- Spawn weights: `{FormatWeights(variant.SpawnWeights)}`");
                 body.AppendLine($"- Hypothesis: {variant.Hypothesis}");
                 body.AppendLine($"- Measure: {variant.Metric}");
@@ -930,6 +985,8 @@ namespace PokoPuzzle.Editor
                 body.AppendLine($"      \"tileTypes\": {variant.LevelConfig.TileTypes},");
                 body.AppendLine($"      \"moveLimit\": {variant.LevelConfig.MoveLimit},");
                 body.AppendLine($"      \"targetScore\": {variant.LevelConfig.TargetScore},");
+                body.AppendLine($"      \"regularEnemyHp\": {variant.LevelConfig.RegularEnemyHp},");
+                body.AppendLine($"      \"bossHp\": {variant.LevelConfig.BossHp},");
                 body.AppendLine($"      \"spawnWeights\": [{FormatWeights(variant.SpawnWeights)}]");
                 body.Append("    }");
                 body.AppendLine(index == variants.Length - 1 ? string.Empty : ",");
@@ -971,6 +1028,8 @@ namespace PokoPuzzle.Editor
                 body.AppendLine($"- Invalid short releases: `{result.Analysis.InvalidMoves}`");
                 body.AppendLine($"- Average chain length: `{result.Analysis.AverageChainLength.ToString("0.00", CultureInfo.InvariantCulture)}`");
                 body.AppendLine($"- Average score per valid move: `{result.Analysis.AverageScorePerValidMove.ToString("0.00", CultureInfo.InvariantCulture)}`");
+                body.AppendLine($"- Regular enemy HP: `{result.Analysis.SuggestedRegularEnemyHp}`");
+                body.AppendLine($"- Boss HP: `{result.Analysis.SuggestedBossHp}`");
                 body.AppendLine($"- Designer read: {result.Analysis.Diagnosis}");
                 body.AppendLine();
             }
@@ -1010,7 +1069,9 @@ namespace PokoPuzzle.Editor
                 body.AppendLine($"      \"validMoves\": {result.Analysis.ValidMoves},");
                 body.AppendLine($"      \"invalidMoves\": {result.Analysis.InvalidMoves},");
                 body.AppendLine($"      \"averageChainLength\": {result.Analysis.AverageChainLength.ToString("0.00", CultureInfo.InvariantCulture)},");
-                body.AppendLine($"      \"averageScorePerValidMove\": {result.Analysis.AverageScorePerValidMove.ToString("0.00", CultureInfo.InvariantCulture)}");
+                body.AppendLine($"      \"averageScorePerValidMove\": {result.Analysis.AverageScorePerValidMove.ToString("0.00", CultureInfo.InvariantCulture)},");
+                body.AppendLine($"      \"suggestedRegularEnemyHp\": {result.Analysis.SuggestedRegularEnemyHp},");
+                body.AppendLine($"      \"suggestedBossHp\": {result.Analysis.SuggestedBossHp}");
                 body.Append("    }");
                 body.AppendLine(index == results.Length - 1 ? string.Empty : ",");
             }
@@ -1589,6 +1650,11 @@ namespace PokoPuzzle.Editor
             return useHexGrid ? "hex" : "square";
         }
 
+        private static string TileVisualName(PokoTileVisualStyle visualStyle)
+        {
+            return visualStyle == PokoTileVisualStyle.CircleInHex ? "circle-in-hex" : "hex";
+        }
+
         private static void WriteReport(string reportPath, string body)
         {
             var directory = Path.GetDirectoryName(reportPath);
@@ -1880,6 +1946,23 @@ namespace PokoPuzzle.Editor
 
                 throw new InvalidOperationException($"Unsupported layout '{value}'. Use 'hex' or 'square'.");
             }
+
+            public PokoTileVisualStyle GetTileVisualStyle(string name, PokoTileVisualStyle fallback)
+            {
+                var value = GetString(name, TileVisualName(fallback));
+                if (string.Equals(value, "hex", StringComparison.OrdinalIgnoreCase))
+                {
+                    return PokoTileVisualStyle.Hex;
+                }
+
+                if (string.Equals(value, "circle-in-hex", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(value, "circleInHex", StringComparison.OrdinalIgnoreCase))
+                {
+                    return PokoTileVisualStyle.CircleInHex;
+                }
+
+                throw new InvalidOperationException($"Unsupported tile visual '{value}'. Use 'hex' or 'circle-in-hex'.");
+            }
         }
 
         private sealed class PlayLogAnalysis
@@ -1889,6 +1972,7 @@ namespace PokoPuzzle.Editor
             public int Height { get; private set; }
             public int TileTypes { get; private set; }
             public int MoveLimit { get; private set; }
+            public int TimeLimit { get; private set; }
             public int TargetScore { get; private set; }
             public string Result { get; private set; } = "unfinished";
             public int FinalScore { get; private set; }
@@ -1904,6 +1988,16 @@ namespace PokoPuzzle.Editor
             public int SuggestedMoveLimit { get; private set; }
             public int SuggestedTargetScore { get; private set; }
             public int SuggestedTileTypes { get; private set; }
+            public int MaxCombo { get; private set; }
+            public int FeverTriggers { get; private set; }
+            public int TotalDamageDealt { get; private set; }
+            public int BombsGenerated { get; private set; }
+            public int BombsDetonated { get; private set; }
+            public int SpecialBlocksCleared { get; private set; }
+            public int RainbowCleared { get; private set; }
+            public int TimeLeft { get; private set; }
+            public int SuggestedRegularEnemyHp { get; private set; }
+            public int SuggestedBossHp { get; private set; }
 
             public static PlayLogAnalysis FromFile(string logPath)
             {
@@ -1920,6 +2014,7 @@ namespace PokoPuzzle.Editor
                         analysis.Height = GetInt(line, "height", analysis.Height);
                         analysis.TileTypes = GetInt(line, "tileTypes", analysis.TileTypes);
                         analysis.MoveLimit = GetInt(line, "moveLimit", analysis.MoveLimit);
+                        analysis.TimeLimit = GetInt(line, "timeLimit", analysis.TimeLimit);
                         analysis.TargetScore = GetInt(line, "targetScore", analysis.TargetScore);
                     }
                     else if (line.Contains("\"event\":\"move\""))
@@ -1946,6 +2041,41 @@ namespace PokoPuzzle.Editor
                         analysis.Result = GetString(line, "result", analysis.Result);
                         analysis.FinalScore = GetInt(line, "score", analysis.FinalScore);
                         analysis.MovesUsed = GetInt(line, "movesUsed", analysis.MovesUsed);
+                        analysis.TimeLeft = GetInt(line, "timeLeft", 0);
+                    }
+                    else if (line.Contains("\"event\":\"combat\""))
+                    {
+                        var combatEvent = GetString(line, "combatEvent", "");
+                        switch (combatEvent)
+                        {
+                            case "enemy_damage":
+                                analysis.TotalDamageDealt += GetInt(line, "value1", 0);
+                                break;
+                            case "bomb_placed":
+                                analysis.BombsGenerated++;
+                                break;
+                            case "bomb_detonate":
+                                analysis.BombsDetonated++;
+                                break;
+                            case "rainbow_cleared":
+                                analysis.RainbowCleared++;
+                                break;
+                        }
+                    }
+                    else if (line.Contains("\"event\":\"fever\""))
+                    {
+                        if (string.Equals(GetString(line, "state", ""), "start", StringComparison.OrdinalIgnoreCase))
+                        {
+                            analysis.FeverTriggers++;
+                        }
+                    }
+                    else if (line.Contains("\"combat\""))
+                    {
+                        var combo = GetInt(line, "combo", 0);
+                        if (combo > analysis.MaxCombo)
+                        {
+                            analysis.MaxCombo = combo;
+                        }
                     }
                 }
 
@@ -1962,29 +2092,54 @@ namespace PokoPuzzle.Editor
             {
                 var fail = string.Equals(Result, "fail", StringComparison.OrdinalIgnoreCase);
                 var clear = string.Equals(Result, "clear", StringComparison.OrdinalIgnoreCase);
+                var timeUp = string.Equals(Result, "time_up", StringComparison.OrdinalIgnoreCase);
                 var invalidRate = ValidMoves + InvalidMoves == 0 ? 0f : (float)InvalidMoves / (ValidMoves + InvalidMoves);
 
-                if (fail && AverageChainLength < 3.8f)
+                if (FeverTriggers >= 2)
                 {
-                    DifficultyLabel = "Hard";
-                    Diagnosis = "Player cleared valid chains, but average chain length stayed low and the level failed.";
-                    Risk = "The board may not surface readable 3+ paths often enough.";
-                    Action = "Lower tile types or increase move limit before raising target score.";
-                    SuggestedMoveLimit = MoveLimit + 4;
-                    SuggestedTargetScore = Mathf.Max(600, TargetScore - 200);
-                    SuggestedTileTypes = Mathf.Max(3, TileTypes - 1);
+                    DifficultyLabel = "Fever Master";
+                    Diagnosis = $"Player triggered Fever {FeverTriggers} times (max combo {MaxCombo}).";
+                    Risk = "Board may be too easy if Fever chains clear everything.";
+                    Action = "Raise target score, add tile types, or increase enemy HP.";
+                    SuggestedMoveLimit = Mathf.Max(8, MoveLimit - 2);
+                    SuggestedTargetScore = TargetScore + 500;
+                    SuggestedTileTypes = Mathf.Min(6, TileTypes + 1);
                     return;
                 }
 
-                if (clear && MovesUsed <= Mathf.Max(1, MoveLimit / 2))
+                if (TotalDamageDealt >= 200)
+                {
+                    DifficultyLabel = "Combat Focus";
+                    Diagnosis = $"Player dealt {TotalDamageDealt} damage to enemy.";
+                    Risk = "Damage output may carry the round regardless of score.";
+                    Action = "Consider increasing enemy HP or adding special blocks.";
+                    SuggestedMoveLimit = MoveLimit;
+                    SuggestedTargetScore = TargetScore + 300;
+                    SuggestedTileTypes = TileTypes;
+                    return;
+                }
+
+                if (timeUp && FinalScore >= TargetScore * 2 && TargetScore > 0)
                 {
                     DifficultyLabel = "Easy";
-                    Diagnosis = "Player cleared the level with many moves left.";
-                    Risk = "The target may be too low for the current board density.";
-                    Action = "Raise target score or add one tile type for the next generated level.";
-                    SuggestedMoveLimit = Mathf.Max(8, MoveLimit - 2);
-                    SuggestedTargetScore = TargetScore + 300;
+                    Diagnosis = $"Player scored {FinalScore} ({FinalScore * 100f / TargetScore:F0}% of target) with full time used. Level is too easy.";
+                    Risk = "Players earn too many points too quickly for the time limit.";
+                    Action = "Increase time limit or raise target score for the next pass.";
+                    SuggestedMoveLimit = MoveLimit;
+                    SuggestedTargetScore = TargetScore + 500;
                     SuggestedTileTypes = Mathf.Min(6, TileTypes + 1);
+                    return;
+                }
+
+                if (timeUp && AverageChainLength < 3.0f && FinalScore < TargetScore * 0.75f && TargetScore > 0)
+                {
+                    DifficultyLabel = "Hard";
+                    Diagnosis = $"Player scored only {FinalScore} with short chains (avg {AverageChainLength:F2}). Level is too hard.";
+                    Risk = "The board may not surface readable 3+ paths often enough within the time limit.";
+                    Action = "Lower tile types or increase time limit for the next pass.";
+                    SuggestedMoveLimit = MoveLimit;
+                    SuggestedTargetScore = Mathf.Max(600, TargetScore - 200);
+                    SuggestedTileTypes = Mathf.Max(3, TileTypes - 1);
                     return;
                 }
 
@@ -1998,6 +2153,58 @@ namespace PokoPuzzle.Editor
                     SuggestedTargetScore = TargetScore;
                     SuggestedTileTypes = TileTypes;
                     return;
+                }
+
+                if (clear && TimeLeft > 0)
+                {
+                    var enemyDb = AssetDatabase.LoadAssetAtPath<PokoEnemyDatabase>("Assets/PokoPuzzle/Data/Resources/PokoEnemyDatabase.asset");
+                    var regEnemyDb = AssetDatabase.LoadAssetAtPath<PokoRegularEnemyDatabase>("Assets/PokoPuzzle/Data/Resources/PokoRegularEnemyDatabase.asset");
+                    if (TimeLimit > 0)
+                    {
+                        var timeRatio = (float)TimeLeft / TimeLimit;
+
+                        var baseBossHp = 0;
+                        if (enemyDb != null)
+                        {
+                            var bossData = enemyDb.GetWave(1);
+                            if (bossData != null) baseBossHp = bossData.Hp;
+                        }
+
+                        var baseRegularEnemyHp = 0;
+                        if (regEnemyDb != null)
+                        {
+                            var regularEnemyData = regEnemyDb.GetEnemy(1);
+                            if (regularEnemyData != null) baseRegularEnemyHp = regularEnemyData.Hp;
+                        }
+
+                        if (timeRatio > 0.5f)
+                        {
+                            DifficultyLabel = "Easy";
+                            Diagnosis = $"Player cleared with {TimeLeft}s left ({timeRatio * 100f:F0}% of {TimeLimit}s). Level is too easy.";
+                            Risk = "Excess time means the time limit is too generous for the current board.";
+                            Action = $"Reduce time limit to {Mathf.CeilToInt(TimeLimit * 0.7f)}s or raise target score.";
+                            SuggestedMoveLimit = Mathf.Max(8, MoveLimit - 2);
+                            SuggestedTargetScore = TargetScore + 300;
+                            SuggestedTileTypes = Mathf.Min(6, TileTypes + 1);
+                            if (baseRegularEnemyHp > 0) SuggestedRegularEnemyHp = Mathf.CeilToInt(baseRegularEnemyHp * 1.3f);
+                            if (baseBossHp > 0) SuggestedBossHp = Mathf.CeilToInt(baseBossHp * 1.3f);
+                            return;
+                        }
+
+                        if (timeRatio < 0.2f)
+                        {
+                            DifficultyLabel = "Hard";
+                            Diagnosis = $"Player barely cleared with only {TimeLeft}s left ({timeRatio * 100f:F0}% of {TimeLimit}s). High time pressure.";
+                            Risk = "Time limit creates stressful gameplay that may feel unfair.";
+                            Action = $"Increase time limit to {Mathf.CeilToInt(TimeLimit * 1.2f)}s for a more comfortable pace.";
+                            SuggestedMoveLimit = MoveLimit + 2;
+                            SuggestedTargetScore = Mathf.Max(600, TargetScore - 200);
+                            SuggestedTileTypes = Mathf.Max(3, TileTypes - 1);
+                            if (baseRegularEnemyHp > 0) SuggestedRegularEnemyHp = Mathf.CeilToInt(baseRegularEnemyHp * 0.8f);
+                            if (baseBossHp > 0) SuggestedBossHp = Mathf.CeilToInt(baseBossHp * 0.8f);
+                            return;
+                        }
+                    }
                 }
 
                 DifficultyLabel = "Normal";

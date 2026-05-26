@@ -1,14 +1,15 @@
 #if UNITY_EDITOR
-using PokoPuzzle.Core;
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEngine;
+using PokoPuzzle.Core;
+using PokoPuzzle.Core.Data;
 
 namespace PokoPuzzle.Editor
 {
     public readonly struct PokoPrototypeSceneSettings
     {
-        public PokoPrototypeSceneSettings(string scenePath, int width, int height, int tileTypes, float spacing, bool useHexGrid)
+        public PokoPrototypeSceneSettings(string scenePath, int width, int height, int tileTypes, float spacing, bool useHexGrid, PokoTileVisualStyle tileVisualStyle)
         {
             ScenePath = scenePath;
             Width = width;
@@ -16,6 +17,7 @@ namespace PokoPuzzle.Editor
             TileTypes = tileTypes;
             Spacing = spacing;
             UseHexGrid = useHexGrid;
+            TileVisualStyle = tileVisualStyle;
         }
 
         public string ScenePath { get; }
@@ -24,8 +26,9 @@ namespace PokoPuzzle.Editor
         public int TileTypes { get; }
         public float Spacing { get; }
         public bool UseHexGrid { get; }
+        public PokoTileVisualStyle TileVisualStyle { get; }
 
-        public static PokoPrototypeSceneSettings Default => new("Assets/Scenes/PokoPrototype.unity", 4, 13, 5, 0.84f, true);
+        public static PokoPrototypeSceneSettings Default => new("Assets/Scenes/PokoPrototype.unity", 4, 13, 5, 0.74f, true, PokoTileVisualStyle.CircleInHex);
     }
 
     public static class PokoPrototypeSceneBuilder
@@ -57,8 +60,8 @@ namespace PokoPuzzle.Editor
             line.material = new Material(Shader.Find("Sprites/Default"));
             line.startColor = Color.white;
             line.endColor = Color.white;
-            line.startWidth = 0.15f;
-            line.endWidth = 0.15f;
+            line.startWidth = 0.11f;
+            line.endWidth = 0.11f;
             line.numCapVertices = 8;
 
             var scoreObject = CreateText("Score HUD", new Vector3(-3.25f, 3.35f, 0f), 30, TextAnchor.UpperLeft);
@@ -71,8 +74,13 @@ namespace PokoPuzzle.Editor
             serializedBoard.FindProperty("width").intValue = settings.Width;
             serializedBoard.FindProperty("height").intValue = settings.Height;
             serializedBoard.FindProperty("tileTypes").intValue = settings.TileTypes;
-            serializedBoard.FindProperty("spacing").floatValue = 0.84f;
+            serializedBoard.FindProperty("spacing").floatValue = settings.Spacing;
             serializedBoard.FindProperty("useHexGrid").boolValue = settings.UseHexGrid;
+            serializedBoard.FindProperty("tileVisualStyle").enumValueIndex = (int)settings.TileVisualStyle;
+            serializedBoard.FindProperty("enemyDatabase").objectReferenceValue = AssetDatabase.LoadAssetAtPath<PokoEnemyDatabase>("Assets/PokoPuzzle/Data/Resources/PokoEnemyDatabase.asset");
+            serializedBoard.FindProperty("skillDatabase").objectReferenceValue = AssetDatabase.LoadAssetAtPath<PokoEnemySkillDatabase>("Assets/PokoPuzzle/Data/Resources/PokoEnemySkillDatabase.asset");
+            serializedBoard.FindProperty("regularEnemyDatabase").objectReferenceValue = AssetDatabase.LoadAssetAtPath<PokoRegularEnemyDatabase>("Assets/PokoPuzzle/Data/Resources/PokoRegularEnemyDatabase.asset");
+            serializedBoard.FindProperty("balanceProfileDatabase").objectReferenceValue = AssetDatabase.LoadAssetAtPath<PokoBalanceProfileDatabase>("Assets/PokoPuzzle/Data/Resources/PokoBalanceProfileDatabase.asset");
             serializedBoard.FindProperty("moveLimit").intValue = 20;
             serializedBoard.FindProperty("targetScore").intValue = 2200;
             serializedBoard.FindProperty("enablePlayLog").boolValue = true;

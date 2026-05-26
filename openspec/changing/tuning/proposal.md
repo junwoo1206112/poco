@@ -1,0 +1,1 @@
+eError: ENOENT: no such file or directory, open 'C:\Users\admin\Unity\Poko Engine CLI Puzzle Framework\openspec\changing\tuning\proposal.md'

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb21a6497da81ba4897e695d65f4a9ba, type: 3}
+  m_Name: PokoEnemySkillDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::PokoPuzzle.Core.Data.PokoEnemySkillDatabase
+  skills:
+  - Wave: 1
+    SkillType: 1
+    TargetCount: 3
+    CooldownSec: 12
+  - Wave: 2
+    SkillType: 2
+    TargetCount: 2
+    CooldownSec: 15
+  - Wave: 3
+    SkillType: 3
+    TargetCount: 3
+    CooldownSec: 14
+  - Wave: 4
+    SkillType: 1
+    TargetCount: 5
+    CooldownSec: 10
+  - Wave: 5
+    SkillType: 3
+    TargetCount: 5
+    CooldownSec: 10

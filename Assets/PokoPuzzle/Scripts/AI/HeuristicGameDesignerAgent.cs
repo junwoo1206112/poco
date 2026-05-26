@@ -7,6 +7,58 @@ namespace PokoPuzzle.AI
             var boardSize = telemetry.Width * telemetry.Height;
             var chainDensity = boardSize == 0 ? 0f : (float)telemetry.PossibleChains / boardSize;
 
+            if (telemetry.RainbowCleared >= 3)
+            {
+                return new AgentSuggestion(
+                    "Rainbow Heavy",
+                    $"{telemetry.RainbowCleared} rainbows cleared.",
+                    "Rainbow tiles were heavily used for bridging. Board felt easy.",
+                    "Rainbow spawn rate may be too high.",
+                    "Lower rainbow probability or increase tile types.",
+                    System.Math.Max(8, telemetry.MovesUsed - 2),
+                    telemetry.Score + 200,
+                    System.Math.Min(6, telemetry.TileTypes + 1));
+            }
+
+            if (telemetry.FeverActive)
+            {
+                return new AgentSuggestion(
+                    "Fever",
+                    $"Combo {telemetry.Combo} / Fever active. {telemetry.TotalDamageDealt} dmg dealt.",
+                    "Fever is running; the board cascade is self-clearing.",
+                    "Fever may end before target score is met.",
+                    "Keep chain momentum; consider lowering target if Fever doesn't resolve.",
+                    telemetry.MovesUsed + 15,
+                    telemetry.Score + 800,
+                    telemetry.TileTypes);
+            }
+
+            if (telemetry.EnemyHp <= 0)
+            {
+                return new AgentSuggestion(
+                    "Boss Down",
+                    $"Enemy defeated. {telemetry.TotalDamageDealt} total damage.",
+                    "Enemy is gone; player can focus on score target.",
+                    "Target score may still be too high without enemy bonus.",
+                    "Consider slightly lower target or faster spawns next level.",
+                    telemetry.MovesUsed + 12,
+                    telemetry.Score + 500,
+                    telemetry.TileTypes);
+            }
+
+            if (telemetry.Combo >= 5)
+            {
+                return new AgentSuggestion(
+                    "Combo Warm",
+                    $"Combo {telemetry.Combo}. Fever threshold at 7.",
+                    "Player is chaining well; board readability is good.",
+                    "One failed chain could reset momentum.",
+                    "Add a small move buffer to reward combo play.",
+                    telemetry.MovesUsed + 10,
+                    telemetry.Score + 400,
+                    telemetry.TileTypes);
+            }
+
             if (telemetry.LongestChain >= 8 || chainDensity > 0.42f)
             {
                 return new AgentSuggestion(

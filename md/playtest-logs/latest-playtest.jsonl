@@ -1,1 +1,15 @@
-{"event":"session_start","levelId":"prototype","width":4,"height":13,"tileTypes":5,"moveLimit":20,"targetScore":2200,"useHexGrid":true}
+{"event":"session_start","levelId":"prototype","width":4,"height":13,"tileTypes":4,"moveLimit":20,"targetScore":1200,"useHexGrid":true}
+{"event":"combat","combatEvent":"enemy_damage","value1":30,"value2":0,"combo":1,"feverActive":false,"enemyHp":0,"enemyMaxHp":30,"timeLeft":53}
+{"event":"move","valid":true,"chainLength":3,"gainedScore":90,"score":140,"movesUsed":1,"movesLeft":19,"timeLeft":53,"possibleChains":14,"longestChain":6}
+{"event":"combat","combatEvent":"enemy_damage","value1":40,"value2":5,"combo":1,"feverActive":false,"enemyHp":5,"enemyMaxHp":45,"timeLeft":48}
+{"event":"move","valid":true,"chainLength":4,"gainedScore":160,"score":300,"movesUsed":2,"movesLeft":18,"timeLeft":48,"possibleChains":17,"longestChain":5}
+{"event":"combat","combatEvent":"enemy_damage","value1":5,"value2":0,"combo":2,"feverActive":false,"enemyHp":0,"enemyMaxHp":45,"timeLeft":47}
+{"event":"move","valid":true,"chainLength":4,"gainedScore":160,"score":535,"movesUsed":3,"movesLeft":17,"timeLeft":47,"possibleChains":16,"longestChain":9}
+{"event":"combat","combatEvent":"enemy_damage","value1":35,"value2":0,"combo":1,"feverActive":false,"enemyHp":0,"enemyMaxHp":35,"timeLeft":44}
+{"event":"move","valid":true,"chainLength":5,"gainedScore":250,"score":845,"movesUsed":4,"movesLeft":16,"timeLeft":44,"possibleChains":10,"longestChain":9}
+{"event":"combat","combatEvent":"enemy_damage","value1":55,"value2":0,"combo":1,"feverActive":false,"enemyHp":0,"enemyMaxHp":55,"timeLeft":41}
+{"event":"combat","combatEvent":"bomb_placed","value1":1,"value2":8,"combo":1,"feverActive":false,"enemyHp":50,"enemyMaxHp":50,"timeLeft":41}
+{"event":"move","valid":true,"chainLength":8,"gainedScore":640,"score":1575,"movesUsed":5,"movesLeft":15,"timeLeft":41,"possibleChains":8,"longestChain":4}
+{"event":"combat","combatEvent":"bomb_detonate","value1":1,"value2":18,"combo":1,"feverActive":false,"enemyHp":50,"enemyMaxHp":50,"timeLeft":39}
+{"event":"combat","combatEvent":"enemy_damage","value1":40,"value2":10,"combo":1,"feverActive":false,"enemyHp":10,"enemyMaxHp":50,"timeLeft":37}
+{"event":"move","valid":true,"chainLength":4,"gainedScore":160,"score":2585,"movesUsed":6,"movesLeft":14,"timeLeft":37,"possibleChains":18,"longestChain":6}

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ff6c7431633e2e4a97215c32292c554, type: 3}
+  m_Name: PokoEnemyDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::PokoPuzzle.Core.Data.PokoEnemyDatabase
+  waves:
+  - Wave: 1
+    Name: Frost Queen
+    Hp: 120
+    DefeatBonus: 500
+  - Wave: 2
+    Name: Stone Golem
+    Hp: 150
+    DefeatBonus: 550
+  - Wave: 3
+    Name: Trickster Spirit
+    Hp: 200
+    DefeatBonus: 600
+  - Wave: 4
+    Name: Frost Wyrm
+    Hp: 250
+    DefeatBonus: 750
+  - Wave: 5
+    Name: Chaos Lord
+    Hp: 350
+    DefeatBonus: 1000

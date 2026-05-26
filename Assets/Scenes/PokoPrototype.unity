@@ -192,12 +192,15 @@ MonoBehaviour:
   width: 4
   height: 13
   tileTypes: 5
-  spacing: 0.84
+  spacing: 0.74
   useHexGrid: 1
+  tileVisualStyle: 0
   moveLimit: 20
   roundTime: 60
   targetScore: 2200
   levelConfig: {fileID: 0}
+  stageDatabase: {fileID: 0}
+  enemyDatabase: {fileID: 0}
   enablePlayLog: 1
   playLogPath: md/playtest-logs/latest-playtest.jsonl
   boardCamera: {fileID: 1009113756}

@@ -7,6 +7,9 @@
 [Ll]ogs/
 [Uu]serSettings/
 [Mm]emoryCaptures/
+_Recovery/
+~$*
+nul
 
 # Visual Studio
 *.csproj
