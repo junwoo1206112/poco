@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines the AI Game Designer Agent contract: structured telemetry input, tuning suggestion output, portfolio evidence, level config generation, playtest log analysis, LLM review, experiment planning/comparison/promotion, and designer loop status reporting.
+Defines the AI Game Designer Agent contract: structured telemetry input (board, combat, rainbow), tuning suggestion output (including HP), portfolio evidence, level config generation (with HP overrides), playtest log analysis (with HP adjustments), LLM review, experiment planning/comparison/promotion (with HP metrics), and designer loop status reporting.
 
 ## Requirements
 
@@ -13,19 +13,61 @@ The AI Game Designer Agent SHALL receive structured board telemetry including bo
 - **WHEN** the board asks the agent for analysis
 - **THEN** the agent receives a `BoardTelemetry` value with the current board and play summary
 
+### Requirement: Combat and rainbow telemetry input
+
+The AI Game Designer Agent SHALL receive extended board telemetry including combat metrics and rainbow bomb data: combo count, fever active flag, enemy HP, total damage dealt, bombs cleared, special blocks cleared, and rainbow bombs cleared.
+
+#### Scenario: Agent analyzes board with combat and rainbow state
+
+- **WHEN** the board asks the agent for analysis
+- **THEN** the agent receives a `BoardTelemetry` value that includes `Combo`, `FeverActive`, `EnemyHp`, `TotalDamageDealt`, `BombsCleared`, `SpecialBlocksCleared`, and `RainbowCleared`
+
+### Requirement: Combat-aware tuning suggestions
+
+The AI Game Designer Agent SHALL consider combat metrics when suggesting difficulty labels and next-level tuning.
+
+#### Scenario: Player frequently triggers Fever
+
+- **WHEN** the play log shows the player reached Fever (7+ combo) in multiple rounds
+- **THEN** the agent labels the board as Easy and suggests increasing enemy HP or reducing combo time window
+
+#### Scenario: Player never reaches Fever
+
+- **WHEN** the play log shows the player never exceeded 3 combo
+- **THEN** the agent labels the board as Hard and suggests lowering enemy starting HP or increasing combo time window
+
+#### Scenario: Player defeats enemy early
+
+- **WHEN** the enemy is defeated before 30% of the round time has elapsed
+- **THEN** the agent labels the board as Easy and suggests increasing enemy HP
+
+### Requirement: Extended play log events
+
+The system SHALL record combat events (combo increment, fever start/end, enemy damage, bomb placement/detonation, special block clear, rainbow bomb detonation) in the play log.
+
+#### Scenario: Runtime records combat and rainbow event
+
+- **WHEN** a combat event occurs (combo change, fever state, enemy damage, bomb event) or a rainbow bomb is detonated
+- **THEN** the play log records the event with relevant context (combo value, fever active, enemy HP, bomb type, rainbow score)
+
+#### Scenario: Play log analysis includes combat and rainbow metrics
+
+- **WHEN** the CLI analyzes a play log
+- **THEN** the analysis report includes combat metrics: max combo reached, fever triggers, total damage dealt, bombs generated/used, special blocks cleared, and rainbow bombs cleared
+
 ### Requirement: Tuning suggestion output
 
-The AI Game Designer Agent SHALL output a difficulty label, readable summary, suggested move limit, suggested target score, and suggested tile type count.
+The AI Game Designer Agent SHALL output a difficulty label, readable summary, suggested move limit, suggested target score, suggested tile type count, suggested regular enemy HP, and suggested boss HP.
 
 #### Scenario: Board has many available links
 
 - **WHEN** the telemetry indicates high chain density or a long available chain
-- **THEN** the agent labels the board easy and suggests stricter next-level tuning
+- **THEN** the agent labels the board easy and suggests stricter next-level tuning, including higher enemy HP values
 
 #### Scenario: Board has few available links
 
 - **WHEN** the telemetry indicates low chain density or very short chains
-- **THEN** the agent labels the board hard and suggests softer next-level tuning
+- **THEN** the agent labels the board hard and suggests softer next-level tuning, including lower enemy HP values
 
 ### Requirement: Portfolio evidence
 
@@ -38,12 +80,12 @@ The AI Game Designer Agent SHALL expose its reasoning in a reviewer-readable for
 
 ### Requirement: Level config generation
 
-The AI Game Designer Agent SHALL convert a tuning suggestion into a Unity-readable level configuration artifact.
+The AI Game Designer Agent SHALL convert a tuning suggestion into a Unity-readable level configuration artifact that optionally includes enemy HP overrides and a balance profile id.
 
 #### Scenario: Agent creates a next-level proposal
 
 - **WHEN** the CLI asks the agent to generate a level
-- **THEN** the project receives a `PokoLevelConfig` asset with board size, layout, tile type count, move limit, target score, and spawn weights
+- **THEN** the project receives a `PokoLevelConfig` asset with board size, layout, tile type count, move limit, target score, spawn weights, balance profile id, optional regular enemy HP, and optional boss HP
 
 #### Scenario: Reviewer inspects generated level data
 
@@ -53,11 +95,11 @@ The AI Game Designer Agent SHALL convert a tuning suggestion into a Unity-readab
 #### Scenario: Agent applies a generated level
 
 - **WHEN** the CLI applies a generated level to the prototype scene
-- **THEN** the scene `LineLinkerBoard` references the generated `PokoLevelConfig` and mirrors its board size, layout, tile type count, move limit, and target score
+- **THEN** the scene `LineLinkerBoard` references the generated `PokoLevelConfig` and mirrors its board size, layout, tile type count, move limit, target score, and balance profile id
 
 ### Requirement: Playtest log analysis
 
-The AI Game Designer Agent SHALL analyze runtime play logs and produce reviewer-readable tuning feedback.
+The AI Game Designer Agent SHALL analyze runtime play logs and produce reviewer-readable tuning feedback including suggested enemy HP adjustments.
 
 #### Scenario: Runtime records play telemetry
 
@@ -67,12 +109,12 @@ The AI Game Designer Agent SHALL analyze runtime play logs and produce reviewer-
 #### Scenario: Agent analyzes playtest telemetry
 
 - **WHEN** the CLI analyzes a playtest log
-- **THEN** it outputs a Markdown and JSON report with result, final score, move count, valid move count, invalid short release count, average chain length, and next tuning action
+- **THEN** it outputs a Markdown and JSON report with result, final score, move count, valid move count, invalid short release count, average chain length, suggested regular enemy HP, suggested boss HP, and next tuning action
 
 #### Scenario: Agent retunes a level from playtest telemetry
 
 - **WHEN** the CLI retunes a level from a playtest log
-- **THEN** it creates a new `PokoLevelConfig` asset whose move limit, target score, tile type count, and spawn weights are based on the playtest result
+- **THEN** it creates a new `PokoLevelConfig` asset whose move limit, target score, tile type count, spawn weights, balance profile id, regular enemy HP, and boss HP are based on the playtest result
 
 ### Requirement: Optional LLM designer review
 
@@ -90,12 +132,12 @@ The AI Game Designer Agent SHALL expose an optional LLM review workflow that rea
 
 ### Requirement: Level experiment planning
 
-The AI Game Designer Agent SHALL convert a playtest diagnosis into a small comparison set of level experiment candidates.
+The AI Game Designer Agent SHALL convert a playtest diagnosis into a small comparison set of level experiment candidates with differentiated HP values and balance profiles.
 
 #### Scenario: Agent plans a next play pass
 
 - **WHEN** the CLI plans level experiments from a playtest log
-- **THEN** it creates control, readability, and combo-focused `PokoLevelConfig` assets for comparison
+- **THEN** it creates control, readability, and combo-focused `PokoLevelConfig` assets where each variant has distinct regular enemy HP, boss HP, and balance profile values
 
 #### Scenario: Reviewer reads the experiment plan
 
@@ -104,7 +146,7 @@ The AI Game Designer Agent SHALL convert a playtest diagnosis into a small compa
 
 ### Requirement: Experiment result comparison
 
-The AI Game Designer Agent SHALL preserve level-specific play logs and compare planned experiment candidates after they are played.
+The AI Game Designer Agent SHALL preserve level-specific play logs and compare planned experiment candidates including HP metrics after they are played.
 
 #### Scenario: Experiment candidate is played
 
@@ -114,7 +156,7 @@ The AI Game Designer Agent SHALL preserve level-specific play logs and compare p
 #### Scenario: Agent compares candidate logs
 
 - **WHEN** the CLI compares control, readability, and combo experiment logs
-- **THEN** it saves Markdown and JSON comparison reports with candidate metrics and a recommended next variant
+- **THEN** it saves Markdown and JSON comparison reports with candidate metrics including regular enemy HP, boss HP, and a recommended next variant
 
 ### Requirement: Experiment winner promotion
 

@@ -17,7 +17,7 @@ MonoBehaviour:
     DisplayName: Default
     MinAvailableChains: 3
     TargetAverageChainLength: 4
-    RainbowGaugeMultiplier: 1
+    FeverGaugeMultiplier: 1
     RefillAssistRate: 0.15
     BlockerBudget: 2
     RegularEnemyHpMultiplier: 1
@@ -27,7 +27,7 @@ MonoBehaviour:
     DisplayName: Readable
     MinAvailableChains: 4
     TargetAverageChainLength: 4.5
-    RainbowGaugeMultiplier: 1.3
+    FeverGaugeMultiplier: 1.3
     RefillAssistRate: 0.25
     BlockerBudget: 1
     RegularEnemyHpMultiplier: 0.85
@@ -37,7 +37,7 @@ MonoBehaviour:
     DisplayName: Pressure
     MinAvailableChains: 2
     TargetAverageChainLength: 3.5
-    RainbowGaugeMultiplier: 0.8
+    FeverGaugeMultiplier: 0.8
     RefillAssistRate: 0.08
     BlockerBudget: 4
     RegularEnemyHpMultiplier: 1.2
@@ -47,7 +47,7 @@ MonoBehaviour:
     DisplayName: Combo
     MinAvailableChains: 3
     TargetAverageChainLength: 5
-    RainbowGaugeMultiplier: 1.1
+    FeverGaugeMultiplier: 1.1
     RefillAssistRate: 0.18
     BlockerBudget: 2
     RegularEnemyHpMultiplier: 1.15

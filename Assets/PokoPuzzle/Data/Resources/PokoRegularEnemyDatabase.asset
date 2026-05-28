@@ -14,52 +14,52 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PokoPuzzle.Core.Data.PokoRegularEnemyDatabase
   enemies:
   - EnemyId: 1
-    Name: Snow Imp
+    Name: Frostbinder Imp
     Hp: 45
     ScoreBonus: 50
     Role: Normal
   - EnemyId: 2
-    Name: Pebble Guard
+    Name: Rime Wisp
     Hp: 60
     ScoreBonus: 75
-    Role: Normal
+    Role: Flying
   - EnemyId: 3
-    Name: Mirage Bat
+    Name: Granite Mite
     Hp: 50
     ScoreBonus: 60
-    Role: Flying
+    Role: Normal
   - EnemyId: 4
-    Name: Frost Larva
+    Name: Crystal Guard
     Hp: 75
     ScoreBonus: 90
-    Role: Normal
+    Role: Armored
   - EnemyId: 5
-    Name: Void Imp
+    Name: Prism Bat
     Hp: 70
     ScoreBonus: 120
-    Role: Dark
+    Role: Flying
   - EnemyId: 6
-    Name: Glacial Wisp
+    Name: Chroma Shifter
     Hp: 55
     ScoreBonus: 55
-    Role: Flying
+    Role: Dark
   - EnemyId: 7
-    Name: Boulder Imp
+    Name: Icebound Larva
     Hp: 85
     ScoreBonus: 85
-    Role: Armored
+    Role: Normal
   - EnemyId: 8
-    Name: Mirage Sprite
+    Name: Stonehide Serpent
     Hp: 40
     ScoreBonus: 45
-    Role: Flying
+    Role: Armored
   - EnemyId: 9
-    Name: Rime Larva
+    Name: Hue Imp
     Hp: 70
     ScoreBonus: 70
-    Role: Normal
+    Role: Dark
   - EnemyId: 10
-    Name: Void Shade
+    Name: Chroma Wisp
     Hp: 80
     ScoreBonus: 110
-    Role: Dark
+    Role: Flying

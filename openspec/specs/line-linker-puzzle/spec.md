@@ -1,6 +1,6 @@
 ## Purpose
 
-Defines the playable Line-Linker puzzle board: runtime generation, hex grid, drag linking, chain clear/collapse/refill, scoring, HUD, win/fail states, and input handling for the Poko Engine CLI Puzzle Framework prototype.
+Defines the playable Line-Linker puzzle board: runtime generation, hex grid, drag linking, chain clear/collapse/refill, scoring with combo multiplier, HUD, win/fail states, hex-shaped tile visuals, and input handling for the Poko Engine CLI Puzzle Framework prototype.
 
 ## Requirements
 
@@ -29,7 +29,7 @@ The system SHALL use odd-row offset hex coordinates for default board placement 
 
 ### Requirement: Same-type drag linking
 
-The system SHALL allow the player to drag across 6-direction adjacent same-type tiles to build a chain.
+The system SHALL allow the player to drag across 6-direction adjacent same-type linkable tiles to build a chain. A chain SHALL commit irreversibly once it reaches 3 or more linked tiles, matching PokoPang one-stroke behavior.
 
 #### Scenario: Player links matching adjacent tiles
 
@@ -41,15 +41,30 @@ The system SHALL allow the player to drag across 6-direction adjacent same-type 
 - **WHEN** the player drags from one tile to an adjacent tile of a different type
 - **THEN** the non-matching tile is not added to the active chain
 
-#### Scenario: Player backtracks to previous tile
+#### Scenario: Player backtracks before commitment
 
-- **WHEN** the player drags from the current tile back to the immediately previous tile in the active chain
-- **THEN** the current last tile is removed from the active chain
+- **WHEN** the player has 1-2 tiles in the active chain and drags back to the previous tile
+- **THEN** the last tile is removed from the active chain
+
+#### Scenario: Chain commits at 3
+
+- **WHEN** the active chain reaches 3 linked tiles
+- **THEN** the chain commits irreversibly and executes (clear, score, collapse, refill) without requiring finger-lift
 
 #### Scenario: Player reads valid next tiles
 
 - **WHEN** a same-type chain is active
 - **THEN** adjacent same-type tiles that can extend the current chain are hinted near the current chain end
+
+#### Scenario: Player cannot link through rainbow as a normal tile
+
+- **WHEN** a rainbow bomb exists on the board
+- **THEN** it is not added to a drag chain as a wildcard tile
+
+#### Scenario: Player detonates rainbow bomb
+
+- **WHEN** the player taps or starts dragging on a rainbow bomb
+- **THEN** the rainbow bomb detonates and removes every linkable tile of the most common color
 
 ### Requirement: Playable board availability
 
@@ -102,9 +117,28 @@ The system SHALL keep score, move count, round state, and round-end recovery rea
 - **WHEN** drag input stops because the round reached a clear or failed state
 - **THEN** the player sees the round-end state and can restart the prototype round from the HUD
 
+### Requirement: Scoring with combo multiplier
+
+The system SHALL score cleared chains using a base formula multiplied by the current combo multiplier.
+
+#### Scenario: Player scores a base clear
+
+- **WHEN** the player clears a chain of N tiles with no combo
+- **THEN** score increases by `N * N * 10`
+
+#### Scenario: Player scores with combo
+
+- **WHEN** the player clears a chain with combo C active
+- **THEN** score increases by `(N * N * 10) * C`
+
+#### Scenario: Player scores during Fever
+
+- **WHEN** the player clears a chain during Fever mode
+- **THEN** score increases by `(N * N * 10) * 2` (Fever multiplier overrides combo multiplier)
+
 ### Requirement: Win and fail state
 
-The system SHALL evaluate the level state using target score and move limit.
+The system SHALL evaluate the level state using target score, move limit, and round timer, and SHALL also check enemy HP as an optional win condition.
 
 #### Scenario: Player reaches target score
 
@@ -116,6 +150,11 @@ The system SHALL evaluate the level state using target score and move limit.
 - **WHEN** the player has used all moves without reaching the target score
 - **THEN** the board enters a failed state and no longer accepts drag input
 
+#### Scenario: Player defeats the enemy
+
+- **WHEN** the enemy HP reaches 0
+- **THEN** a 5000 score bonus is awarded (this does not end the round; the player can continue playing)
+
 ### Requirement: Input System compatibility
 
 The system SHALL use Unity Input System APIs for pointer input.
@@ -124,3 +163,49 @@ The system SHALL use Unity Input System APIs for pointer input.
 
 - **WHEN** the project active input handling is set to Input System package
 - **THEN** the puzzle accepts mouse or touch pointer input without using `UnityEngine.Input`
+
+### Requirement: Hex-shaped tile presentation
+
+The system SHALL render each tile as a hex-shaped sprite whose visual edges match the odd-row offset hex grid adjacency.
+
+#### Scenario: Board displays hex tiles
+
+- **WHEN** the prototype scene enters Play mode
+- **THEN** each tile is rendered as a hex-shaped sprite with flat-color fill matching its tile type color
+
+#### Scenario: Player clicks a hex tile
+
+- **WHEN** the player clicks or drags on a tile
+- **THEN** the click hit detection covers the hex silhouette area without significant dead zones outside the hex boundary
+
+### Requirement: Circle-in-hex tile presentation
+
+The system SHALL support a CLI-selected tile visual where each tile renders as a colored circle inside a visible hexagonal frame.
+
+#### Scenario: CLI creates circle-in-hex tiles
+
+- **WHEN** `create-core-board` is run with `--tileVisual circle-in-hex`
+- **THEN** the generated prototype scene stores the circle-in-hex tile visual style
+- **AND** each runtime tile renders as a colored circle inside a hexagonal frame
+
+#### Scenario: Hex frames join into a puzzle board
+
+- **WHEN** the prototype scene enters Play mode with the default 4x13 circle-in-hex board
+- **THEN** adjacent hex frames visually meet as one connected 3-4-3-4 puzzle-board silhouette instead of separated individual tiles
+
+#### Scenario: Row-offset hex grid matches pointy-top geometry
+
+- **WHEN** the board uses alternating 3-4 rows with horizontal row offsets
+- **THEN** the tile silhouette, collider, visual placement, and six-direction adjacency use matching pointy-top hex geometry
+
+#### Scenario: Collapse preserves 3-4-3-4 silhouette
+
+- **WHEN** tiles are cleared and the board collapses/refills
+- **THEN** tiles only occupy valid cells for each row
+- **AND** the alternating 3-4-3-4 board silhouette is preserved
+
+#### Scenario: Core tiles keep stable color-shape identity
+
+- **WHEN** the prototype spawns normal core tiles
+- **THEN** each tile type uses one stable color and one stable shape
+- **AND** random special block tinting does not create same-shape different-color normal tiles

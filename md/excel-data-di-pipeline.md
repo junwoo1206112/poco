@@ -33,8 +33,9 @@ tools\poko-cli.cmd convert-excel-data
 - `PokoEnemyDatabase` implements boss wave lookup for HP and defeat bonus from the `Boss` sheet.
 - `PokoRegularEnemyDatabase` implements normal enemy lookup for HP and score bonus from the `Enemy` sheet.
 - `PokoEnemySkillDatabase` implements enemy skill lookup from the `Skill` sheet.
-- `PokoBalanceProfileDatabase` implements pressure preset lookup from the `BalanceProfile` sheet, including `RainbowGaugeMultiplier` for rainbow bomb charge pacing.
-- Round settings such as board size, tile type count, target score, and move limit live in `PokoLevelConfig` and generated level assets rather than the Excel workbook.
+- `PokoBalanceProfileDatabase` implements pressure preset lookup from the `BalanceProfile` sheet, including `FeverGaugeMultiplier` for Fever charge pacing.
+- `PokoLevelConfig` can select a `BalanceProfile` row by profile id, so generated experiment levels can run as `default`, `readable`, `pressure`, or `combo`.
+- Round settings such as board size, tile type count, target score, balance profile id, and move limit live in `PokoLevelConfig` and generated level assets rather than the Excel workbook.
 - NPOI is used by editor tooling to read `.xlsx`; gameplay uses converted Unity assets.
 
 ## Portfolio Value

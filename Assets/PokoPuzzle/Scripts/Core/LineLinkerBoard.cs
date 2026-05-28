@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using PokoPuzzle.AI;
 using PokoPuzzle.Core.Data;
@@ -41,6 +42,7 @@ namespace PokoPuzzle.Core
         [SerializeField] private PokoEnemySkillDatabase skillDatabase;
         [SerializeField] private PokoRegularEnemyDatabase regularEnemyDatabase;
         [SerializeField] private PokoBalanceProfileDatabase balanceProfileDatabase;
+        [SerializeField] private string balanceProfileId = "default";
 
         private float enemySkillTimer;
         private float skillCooldown = 10f;
@@ -50,6 +52,7 @@ namespace PokoPuzzle.Core
         private float timeRemaining;
         private bool dragging;
         private bool gameEnded;
+        private bool resolvingVisualEffect;
         private string agentHudText = "Designer analyzing board...";
 
         private int comboCount;
@@ -62,8 +65,8 @@ namespace PokoPuzzle.Core
 
         private PlayLogger playLogger;
         private BoardHudRenderer hudRenderer;
+        private BoardEffectRenderer effectRenderer;
         private BoardEnemy enemy;
-        private int bossWave = 1;
         private int bossMaxHp = 100;
         private int bossDefeatBonus = 500;
         private string bossName = "Monster";
@@ -76,12 +79,27 @@ namespace PokoPuzzle.Core
         private int rainbowClearedCount;
         private int rainbowTapsCount;
         private int enemySpawnIndex;
-        private const int BossInterval = 5;
+        private int regularSpawnCount;
         private const float WaveHpMultiplier = 1.25f;
 
-        private float rainbowGauge;
-        private const float RainbowGaugeMax = 100f;
-        private const float GaugeFillPerBlock = 4f;
+        private static readonly Dictionary<int, int[]> BossRegularThemeMap = new()
+        {
+            { 1, new[] { 1, 7 } },
+            { 2, new[] { 3, 8 } },
+            { 3, new[] { 5, 9 } },
+            { 4, new[] { 2, 4 } },
+            { 5, new[] { 10, 6 } },
+        };
+
+        private readonly List<int> bossCycleOrder = new();
+        private int bossCyclePtr;
+        private int bossGroupStep;
+        private int currentGroupBossWave;
+        private int[] currentGroupRegulars = new int[2];
+
+        private float feverGauge;
+        private const float FeverGaugeMax = 100f;
+        private const float FeverGaugeFillPerBlock = 4f;
 
         private readonly List<PokoTile> bombTiles = new();
 
@@ -92,6 +110,7 @@ namespace PokoPuzzle.Core
                 boardCamera = Camera.main;
             }
 
+            tiles = new PokoTile[width, height];
             designerAgent = new HeuristicGameDesignerAgent();
             InitDataProviders();
             ApplyLevelConfig();
@@ -100,8 +119,14 @@ namespace PokoPuzzle.Core
             hudRenderer.FramePlayCamera();
             hudRenderer.PrepareHud();
             hudRenderer.OnRestartRequested = RestartRound;
+            effectRenderer = GetComponent<BoardEffectRenderer>();
+            if (effectRenderer == null)
+            {
+                effectRenderer = gameObject.AddComponent<BoardEffectRenderer>();
+            }
+
+            effectRenderer.Configure(boardCamera);
             tileSprites = TileSpriteGenerator.CreateTileSprites(tileVisualStyle);
-            tiles = new PokoTile[width, height];
 
             if (enemy == null)
             {
@@ -113,7 +138,7 @@ namespace PokoPuzzle.Core
             playLogger = CreatePlayLogger();
             playLogger.WriteSessionStart(
                 levelConfig == null ? "prototype" : levelConfig.LevelId,
-                width, height, tileTypes, moveLimit, Mathf.CeilToInt(roundTime), targetScore, useHexGrid);
+                width, height, tileTypes, moveLimit, Mathf.CeilToInt(roundTime), targetScore, useHexGrid, balanceProfileId);
             hudRenderer?.RefreshHud(score, enemySpawnIndex, Mathf.CeilToInt(timeRemaining));
             RunDesignerAgent();
         }
@@ -123,6 +148,11 @@ namespace PokoPuzzle.Core
             RefreshTimedFeedback();
 
             if (gameEnded)
+            {
+                return;
+            }
+
+            if (resolvingVisualEffect)
             {
                 return;
             }
@@ -293,11 +323,16 @@ namespace PokoPuzzle.Core
         private void CommitChain()
         {
             var chainLength = selectedTiles.Count;
-            var comboMultiplier = feverActive ? 2 : Mathf.Max(1, comboCount);
-            var gainedScore = ClearMatchedTiles() * comboMultiplier;
+            var selectedPositions = CaptureTilePositions(selectedTiles);
+            var chainCenter = AveragePosition(selectedPositions);
+            var baseScore = ClearMatchedTiles();
 
             ApplyComboIncrement();
-            ApplyEnemyDamage(chainLength);
+            var comboMultiplier = feverActive ? 2 : Mathf.Max(1, comboCount);
+            var gainedScore = baseScore * comboMultiplier;
+            score += gainedScore;
+            effectRenderer?.PlayChainClear(selectedPositions, chainCenter, gainedScore, feverActive);
+            ApplyEnemyDamage(chainLength, chainCenter);
             TryPlaceBomb(chainLength);
             ClearAdjacentFrozenTiles();
 
@@ -327,13 +362,22 @@ namespace PokoPuzzle.Core
 
             lastClearTime = Time.time;
 
-            if (!feverActive && comboCount >= FeverComboThreshold)
+            TryStartFever(comboCount >= FeverComboThreshold);
+        }
+
+        private void TryStartFever(bool shouldStart)
+        {
+            if (!shouldStart || feverActive)
             {
-                feverActive = true;
-                feverTimer = FeverDuration;
-                hudRenderer.ShowFeedback("FEVER!", new Color(1f, 0.4f, 0.1f), 2f);
-                playLogger?.LogFeverEvent("start", comboCount, Mathf.CeilToInt(timeRemaining));
+                return;
             }
+
+            feverActive = true;
+            feverTimer = FeverDuration;
+            feverGauge = 0f;
+            hudRenderer.ShowFeedback("FEVER!", new Color(1f, 0.4f, 0.1f), 2f);
+            effectRenderer?.PlayFeverStart();
+            playLogger?.LogFeverEvent("start", comboCount, Mathf.CeilToInt(timeRemaining));
         }
 
         private void ResetCombo()
@@ -366,7 +410,7 @@ namespace PokoPuzzle.Core
             }
         }
 
-        private void ApplyEnemyDamage(int chainLength)
+        private void ApplyEnemyDamage(int chainLength, Vector3 sourcePosition)
         {
             if (enemy == null || enemy.IsDefeated)
             {
@@ -376,6 +420,8 @@ namespace PokoPuzzle.Core
             var damage = chainLength * 10;
             var dealt = enemy.ApplyDamage(damage);
             totalDamageDealt += dealt;
+            effectRenderer?.PlayDamage(sourcePosition, dealt, enemy.Wave > 0);
+            hudRenderer?.PlayDamagePulse(enemy.Wave > 0);
             playLogger?.LogCombatEvent("enemy_damage", dealt, enemy.CurrentHp,
                 comboCount, feverActive, enemy.CurrentHp, enemy.MaxHp, Mathf.CeilToInt(timeRemaining));
 
@@ -474,6 +520,11 @@ namespace PokoPuzzle.Core
 
         private int ClearMatchedTiles()
         {
+            if (tiles == null)
+            {
+                return 0;
+            }
+
             var chainLength = selectedTiles.Count;
             var gainedScore = chainLength * chainLength * 10;
             var tilesToDestroy = new List<PokoTile>(selectedTiles);
@@ -515,14 +566,18 @@ namespace PokoPuzzle.Core
                 {
                     timeRemaining += 2f;
                     specialBlocksClearedCount++;
+                    playLogger?.LogCombatEvent("special_block_clear", 3, 1,
+                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
                 }
                 else if (tile.IsFrozen || tile.IsStone)
                 {
                     specialBlocksClearedCount++;
+                    playLogger?.LogCombatEvent("special_block_clear", tile.IsFrozen ? 1 : 2, 1,
+                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
                 }
 
                 tiles[tileColumn, tileRow] = null;
-                Destroy(tile.gameObject);
+                tile.PlayClearAndDestroy();
 
                 foreach (var frozenPos in HexGridUtility.GetNeighbors(tileColumn, tileRow, height))
                 {
@@ -531,13 +586,14 @@ namespace PokoPuzzle.Core
                     {
                         specialBlocksClearedCount++;
                         tiles[frozenPos.x, frozenPos.y] = null;
-                        Destroy(frozenTile.gameObject);
+                        frozenTile.PlayClearAndDestroy();
+                        playLogger?.LogCombatEvent("special_block_clear", 1, 1,
+                            comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
                     }
                 }
             }
 
-            score += gainedScore;
-            FillRainbowGauge(tilesToDestroy.Count);
+            FillFeverGauge(tilesToDestroy.Count);
             return gainedScore;
         }
 
@@ -563,7 +619,9 @@ namespace PokoPuzzle.Core
                             {
                                 specialBlocksClearedCount++;
                                 tiles[column, row] = null;
-                                Destroy(tile.gameObject);
+                                tile.PlayClearAndDestroy();
+                                playLogger?.LogCombatEvent("special_block_clear", 1, 1,
+                                    comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
                                 changed = true;
                                 break;
                             }
@@ -599,61 +657,29 @@ namespace PokoPuzzle.Core
 
             var pos = emptyPositions[Random.Range(0, emptyPositions.Count)];
             var bombTile = CreateTile(pos.x, pos.y, PokoTileType.Red);
-            var bt = chainLength >= 10 ? BombType.Blue : BombType.Red;
+            var bt = chainLength >= 12 ? BombType.Rainbow : chainLength >= 10 ? BombType.Blue : BombType.Red;
             bombTile.ConfigureBomb(bt);
             tiles[pos.x, pos.y] = bombTile;
             bombTiles.Add(bombTile);
-            playLogger?.LogCombatEvent("bomb_placed", bt == BombType.Blue ? 2 : 1, chainLength,
+            playLogger?.LogCombatEvent("bomb_placed", bt == BombType.Rainbow ? 3 : bt == BombType.Blue ? 2 : 1, chainLength,
                 comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
         }
 
-        private void FillRainbowGauge(int blocksCleared)
+        private void FillFeverGauge(int blocksCleared)
         {
+            if (feverActive)
+            {
+                return;
+            }
+
             var gaugeMultiplier = activeBalanceProfile != null
-                ? Mathf.Max(0f, activeBalanceProfile.RainbowGaugeMultiplier)
+                ? Mathf.Max(0f, activeBalanceProfile.FeverGaugeMultiplier)
                 : 1f;
-            rainbowGauge += blocksCleared * GaugeFillPerBlock * gaugeMultiplier;
-            if (rainbowGauge >= RainbowGaugeMax)
+            feverGauge += blocksCleared * FeverGaugeFillPerBlock * gaugeMultiplier;
+            if (feverGauge >= FeverGaugeMax)
             {
-                if (SpawnRainbowBomb())
-                {
-                    rainbowGauge = Mathf.Repeat(rainbowGauge, RainbowGaugeMax);
-                }
-                else
-                {
-                    rainbowGauge = RainbowGaugeMax;
-                }
+                TryStartFever(true);
             }
-        }
-
-        private bool SpawnRainbowBomb()
-        {
-            var emptyPositions = new List<Vector2Int>();
-            for (var column = 0; column < width; column++)
-            {
-                for (var row = 0; row < height; row++)
-                {
-                    if (IsInsideBoard(column, row) && tiles[column, row] == null)
-                    {
-                        emptyPositions.Add(new Vector2Int(column, row));
-                    }
-                }
-            }
-
-            if (emptyPositions.Count == 0)
-            {
-                return false;
-            }
-
-            var pos = emptyPositions[Random.Range(0, emptyPositions.Count)];
-            var bombTile = CreateTile(pos.x, pos.y, PokoTileType.Red);
-            bombTile.ConfigureBomb(BombType.Rainbow);
-            tiles[pos.x, pos.y] = bombTile;
-            bombTiles.Add(bombTile);
-            hudRenderer.ShowFeedback("Rainbow Bomb Ready!", new Color(0.8f, 0.4f, 1f), 2f);
-            playLogger?.LogCombatEvent("rainbow_ready", 1, Mathf.RoundToInt(rainbowGauge),
-                comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
-            return true;
         }
 
         private void TickBombs()
@@ -687,7 +713,7 @@ namespace PokoPuzzle.Core
 
             bombTiles.Remove(bombTile);
             tiles[column, row] = null;
-            Destroy(bombTile.gameObject);
+            bombTile.PlayClearAndDestroy(0.14f);
 
             if (bombType == BombType.Rainbow)
             {
@@ -712,12 +738,15 @@ namespace PokoPuzzle.Core
                 if (tile.IsStone || tile.IsFrozen || tile.IsClock)
                 {
                     specialBlocksClearedCount++;
+                    var subtype = tile.IsClock ? 3 : tile.IsFrozen ? 1 : 2;
+                    playLogger?.LogCombatEvent("special_block_clear", subtype, 1,
+                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
                 }
 
                 bombsClearedCount++;
                 score += 50;
                 tiles[pos.x, pos.y] = null;
-                Destroy(tile.gameObject);
+                tile.PlayClearAndDestroy();
             }
 
             ClearAdjacentFrozenTiles();
@@ -729,7 +758,6 @@ namespace PokoPuzzle.Core
         private void DetonateRainbowBomb()
         {
             var typeCounts = new int[6];
-            var totalRemoved = 0;
 
             for (var col = 0; col < width; col++)
             {
@@ -760,6 +788,14 @@ namespace PokoPuzzle.Core
                 return;
             }
 
+            StartCoroutine(ResolveRainbowClear(targetType));
+        }
+
+        private IEnumerator ResolveRainbowClear(PokoTileType targetType)
+        {
+            resolvingVisualEffect = true;
+            var clearedPositions = new List<Vector3>();
+            var targets = new List<PokoTile>();
             for (var col = 0; col < width; col++)
             {
                 for (var r = 0; r < height; r++)
@@ -767,17 +803,34 @@ namespace PokoPuzzle.Core
                     var tile = tiles[col, r];
                     if (tile != null && tile.Type == targetType && tile.IsLinkable)
                     {
-                        if (tile.IsClock)
-                        {
-                            timeRemaining += 2f;
-                            specialBlocksClearedCount++;
-                        }
-
-                        tiles[col, r] = null;
-                        Destroy(tile.gameObject);
-                        totalRemoved++;
+                        clearedPositions.Add(tile.transform.position);
+                        targets.Add(tile);
                     }
                 }
+            }
+
+            effectRenderer?.PlayRainbowPreview(clearedPositions, AveragePosition(clearedPositions));
+            yield return new WaitForSeconds(0.12f);
+
+            var totalRemoved = 0;
+            foreach (var tile in targets)
+            {
+                if (tile == null || !IsInside(tile.Column, tile.Row) || tiles[tile.Column, tile.Row] != tile)
+                {
+                    continue;
+                }
+
+                if (tile.IsClock)
+                {
+                    timeRemaining += 2f;
+                    specialBlocksClearedCount++;
+                    playLogger?.LogCombatEvent("special_block_clear", 3, 1,
+                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+                }
+
+                tiles[tile.Column, tile.Row] = null;
+                tile.PlayClearAndDestroy();
+                totalRemoved++;
             }
 
             var gainedScore = totalRemoved * 50;
@@ -785,6 +838,7 @@ namespace PokoPuzzle.Core
             rainbowClearedCount++;
             rainbowTapsCount++;
             hudRenderer.ShowFeedback($"Rainbow! Cleared all {targetType} (+{gainedScore})", new Color(0.8f, 0.4f, 1f), 2.5f);
+            effectRenderer?.PlayRainbowClear(clearedPositions, AveragePosition(clearedPositions), gainedScore);
 
             ClearAdjacentFrozenTiles();
             CollapseAndRefill();
@@ -793,6 +847,7 @@ namespace PokoPuzzle.Core
             hudRenderer?.RefreshHud(score, enemySpawnIndex, Mathf.CeilToInt(timeRemaining));
             RunDesignerAgent();
             EvaluateEndState();
+            resolvingVisualEffect = false;
         }
 
         private void TickEnemySkills()
@@ -824,7 +879,10 @@ namespace PokoPuzzle.Core
 
             var skill = skills[Random.Range(0, skills.Count)];
             var targetCount = skill.TargetCount;
-            skillCooldown = skill.CooldownSec;
+            var cooldownMultiplier = activeBalanceProfile != null
+                ? Mathf.Max(0.01f, activeBalanceProfile.SkillCooldownMultiplier)
+                : 1f;
+            skillCooldown = skill.CooldownSec * cooldownMultiplier;
             enemySkillTimer = skillCooldown;
 
             switch (skill.SkillType)
@@ -847,6 +905,8 @@ namespace PokoPuzzle.Core
         private void ApplyFreezeSkill(int count)
         {
             var targets = GetRandomLinkableTiles(count);
+            hudRenderer?.PlaySkillPulse(new Color(0.55f, 0.85f, 1f, 0.95f));
+            effectRenderer?.PlayBossSkill(EnemySkillType.Freeze, targets);
             foreach (var tile in targets)
             {
                 tile.ConfigureSubtype(PokoBlockSubtype.Frozen);
@@ -858,6 +918,8 @@ namespace PokoPuzzle.Core
         private void ApplyStoneSkill(int count)
         {
             var targets = GetRandomLinkableTiles(count);
+            hudRenderer?.PlaySkillPulse(new Color(0.62f, 0.62f, 0.62f, 0.95f));
+            effectRenderer?.PlayBossSkill(EnemySkillType.Stone, targets);
             foreach (var tile in targets)
             {
                 tile.ConfigureSubtype(PokoBlockSubtype.Stone);
@@ -869,6 +931,8 @@ namespace PokoPuzzle.Core
         private void ApplyColorSwapSkill(int count)
         {
             var targets = GetRandomLinkableTiles(count);
+            hudRenderer?.PlaySkillPulse(new Color(1f, 0.45f, 0.95f, 0.95f));
+            effectRenderer?.PlayBossSkill(EnemySkillType.ColorSwap, targets);
             foreach (var tile in targets)
             {
                 var newType = RandomType();
@@ -949,8 +1013,10 @@ namespace PokoPuzzle.Core
                 if (bottom != null && bottom.IsStone)
                 {
                     tiles[column, 0] = null;
-                    Destroy(bottom.gameObject);
+                    bottom.PlayClearAndDestroy();
                     specialBlocksClearedCount++;
+                    playLogger?.LogCombatEvent("special_block_clear", 2, 1,
+                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
                 }
             }
 
@@ -1033,11 +1099,52 @@ namespace PokoPuzzle.Core
                 return;
             }
 
+            var activeColor = feverActive ? new Color(1f, 0.55f, 0.08f) : Color.white;
+            var lineWidth = selectedTiles.Count >= 3 ? 0.15f : 0.11f;
+            linkLine.startColor = activeColor;
+            linkLine.endColor = activeColor;
+            linkLine.startWidth = lineWidth;
+            linkLine.endWidth = lineWidth;
             linkLine.positionCount = selectedTiles.Count;
             for (var index = 0; index < selectedTiles.Count; index++)
             {
                 linkLine.SetPosition(index, selectedTiles[index].transform.position + Vector3.back * 0.1f);
             }
+        }
+
+        private static List<Vector3> CaptureTilePositions(IReadOnlyList<PokoTile> source)
+        {
+            var positions = new List<Vector3>();
+            if (source == null)
+            {
+                return positions;
+            }
+
+            foreach (var tile in source)
+            {
+                if (tile != null)
+                {
+                    positions.Add(tile.transform.position);
+                }
+            }
+
+            return positions;
+        }
+
+        private static Vector3 AveragePosition(IReadOnlyList<Vector3> positions)
+        {
+            if (positions == null || positions.Count == 0)
+            {
+                return Vector3.zero;
+            }
+
+            var sum = Vector3.zero;
+            foreach (var position in positions)
+            {
+                sum += position;
+            }
+
+            return sum / positions.Count;
         }
 
         private void RunDesignerAgent()
@@ -1367,8 +1474,10 @@ namespace PokoPuzzle.Core
                 targetScore = levelConfig.TargetScore;
                 regularEnemyHpOverride = levelConfig.RegularEnemyHp;
                 bossHpOverride = levelConfig.BossHp;
+                balanceProfileId = levelConfig.BalanceProfileId;
             }
 
+            SelectActiveBalanceProfile();
             ApplyBossDefaults();
         }
 
@@ -1401,39 +1510,43 @@ namespace PokoPuzzle.Core
 
             if (balanceProfileDatabase != null)
             {
-                activeBalanceProfile = balanceProfileDatabase.GetProfile("default");
                 Debug.Log($"[LineLinkerBoard] Loaded {balanceProfileDatabase.GetAllProfiles().Count} balance profiles");
             }
 
             ResetEnemySkills();
         }
 
+        private void SelectActiveBalanceProfile()
+        {
+            if (balanceProfileDatabase == null)
+            {
+                activeBalanceProfile = null;
+                return;
+            }
+
+            activeBalanceProfile = balanceProfileDatabase.GetProfile(balanceProfileId);
+            balanceProfileId = activeBalanceProfile?.ProfileId ?? "default";
+            Debug.Log($"[LineLinkerBoard] Active balance profile: {balanceProfileId}");
+        }
+
         private void ApplyBossDefaults()
         {
-            bossWave = 1;
             enemySpawnIndex = 0;
-
-            if (enemyDatabase != null)
-            {
-                var bossData = enemyDatabase.GetWave(bossWave);
-                bossMaxHp = bossData?.Hp ?? 100;
-                bossDefeatBonus = bossData?.DefeatBonus ?? 500;
-                bossName = bossData?.Name ?? $"Boss {bossWave}";
-            }
+            regularSpawnCount = 0;
+            ShuffleBossCycle();
+            bossCyclePtr = 0;
+            bossGroupStep = 0;
 
             SpawnNextEnemy();
         }
 
         private void SpawnNextEnemy()
         {
-            var isBoss = enemySpawnIndex > 0 && enemySpawnIndex % BossInterval == 0;
-            var cycleIndex = enemySpawnIndex / 10;
-            var enemyId = (enemySpawnIndex % 10) + 1;
-            var multiplier = Mathf.Pow(WaveHpMultiplier, cycleIndex);
+            var multiplier = Mathf.Pow(WaveHpMultiplier, regularSpawnCount / 10);
 
-            if (isBoss)
+            if (bossGroupStep == 2)
             {
-                var wave = ((enemySpawnIndex / BossInterval) - 1) % 5 + 1;
+                var wave = currentGroupBossWave;
                 if (enemyDatabase != null)
                 {
                     var bossData = enemyDatabase.GetWave(wave);
@@ -1442,14 +1555,31 @@ namespace PokoPuzzle.Core
                 }
                 else
                 {
-                    enemy = new BoardEnemy(ResolveEnemyHp(bossMaxHp, true, multiplier), bossDefeatBonus, bossName, bossWave);
+                    enemy = new BoardEnemy(ResolveEnemyHp(bossMaxHp, true, multiplier), bossDefeatBonus, bossName, wave);
                 }
 
                 hudRenderer.ShowFeedback($"BOSS - {enemy.Name}!", new Color(1f, 0.4f, 0.1f), 2f);
+                effectRenderer?.PlayBossSpawn(enemy.Name);
+                hudRenderer?.PlayBossPulse();
                 Debug.Log($"[LineLinkerBoard] Boss spawned: {enemy.Name} (HP {enemy.MaxHp}, spawn {enemySpawnIndex})");
+
+                bossCyclePtr++;
+                if (bossCyclePtr >= bossCycleOrder.Count)
+                {
+                    ShuffleBossCycle();
+                    bossCyclePtr = 0;
+                }
+                bossGroupStep = 0;
             }
             else
             {
+                if (bossGroupStep == 0)
+                {
+                    currentGroupBossWave = bossCycleOrder[bossCyclePtr];
+                    currentGroupRegulars = PickRegularsForBoss(currentGroupBossWave);
+                }
+
+                var enemyId = currentGroupRegulars[bossGroupStep];
                 if (regularEnemyDatabase != null)
                 {
                     var regData = regularEnemyDatabase.GetEnemy(enemyId);
@@ -1462,10 +1592,34 @@ namespace PokoPuzzle.Core
                 }
 
                 Debug.Log($"[LineLinkerBoard] Enemy spawned: {enemy.Name} (HP {enemy.MaxHp}, spawn {enemySpawnIndex})");
+                bossGroupStep++;
+                regularSpawnCount++;
             }
 
             enemySpawnIndex++;
             ResetEnemySkills();
+        }
+
+        private void ShuffleBossCycle()
+        {
+            bossCycleOrder.Clear();
+            for (var i = 1; i <= 5; i++)
+            {
+                bossCycleOrder.Add(i);
+            }
+
+            for (var i = bossCycleOrder.Count - 1; i > 0; i--)
+            {
+                var j = Random.Range(0, i + 1);
+                (bossCycleOrder[i], bossCycleOrder[j]) = (bossCycleOrder[j], bossCycleOrder[i]);
+            }
+        }
+
+        private static int[] PickRegularsForBoss(int bossWave)
+        {
+            return BossRegularThemeMap.TryGetValue(bossWave, out var pool) && pool.Length >= 2
+                ? new[] { pool[0], pool[1] }
+                : new[] { 1, 2 };
         }
 
         private int ResolveEnemyHp(int baseHp, bool isBoss, float waveMultiplier)
@@ -1531,10 +1685,13 @@ namespace PokoPuzzle.Core
             specialBlocksClearedCount = 0;
             rainbowClearedCount = 0;
             rainbowTapsCount = 0;
-            rainbowGauge = 0f;
+            feverGauge = 0f;
             bombTiles.Clear();
             enemySpawnIndex = 0;
-            enemy = new BoardEnemy(30, 50, "Monster", 0);
+            regularSpawnCount = 0;
+            ShuffleBossCycle();
+            bossCyclePtr = 0;
+            bossGroupStep = 0;
             SpawnNextEnemy();
             ResetEnemySkills();
             tiles = new PokoTile[width, height];
@@ -1567,7 +1724,7 @@ namespace PokoPuzzle.Core
         {
             hudRenderer?.OnGUI(score, Mathf.CeilToInt(timeRemaining), comboCount, feverActive,
                 Mathf.CeilToInt(feverTimer), agentHudText, gameEnded, targetScore,
-                enemy, enemySpawnIndex, rainbowGauge, RainbowGaugeMax);
+                enemy, enemySpawnIndex, feverGauge, FeverGaugeMax);
         }
 
         private PlayLogger CreatePlayLogger()

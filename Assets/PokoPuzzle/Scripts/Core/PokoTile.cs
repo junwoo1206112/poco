@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace PokoPuzzle.Core
@@ -10,6 +11,7 @@ namespace PokoPuzzle.Core
         [SerializeField] private PolygonCollider2D hexCollider;
 
         private static Sprite rainbowSprite;
+        private static Sprite statusOverlaySprite;
 
         public int Column { get; private set; }
         public int Row { get; private set; }
@@ -23,6 +25,10 @@ namespace PokoPuzzle.Core
         public bool IsLinkable => (BlockSubtype == PokoBlockSubtype.None || BlockSubtype == PokoBlockSubtype.Clock) && !IsBomb;
 
         private float bombTimer = -1f;
+        private bool selected;
+        private bool hinted;
+        private bool clearing;
+        private SpriteRenderer statusOverlay;
         private const float BombAutoDetonateTime = 5f;
         private static readonly Color FrozenTint = new Color(0.6f, 0.8f, 1f, 1f);
         private static readonly Color StoneTint = new Color(0.5f, 0.5f, 0.5f, 1f);
@@ -46,8 +52,18 @@ namespace PokoPuzzle.Core
             Type = type;
             BlockSubtype = PokoBlockSubtype.None;
             IsBomb = false;
+            selected = false;
+            hinted = false;
+            clearing = false;
             bombTimer = -1f;
+            if (hexCollider != null)
+            {
+                hexCollider.enabled = true;
+            }
+
+            transform.localScale = Vector3.one;
             spriteRenderer.sprite = sprite;
+            EnsureStatusOverlay();
             ApplyVisual();
             name = $"Tile_{column}_{row}_{type}";
             SetHexCollider();
@@ -57,7 +73,17 @@ namespace PokoPuzzle.Core
         {
             BlockSubtype = subtype;
             IsBomb = false;
+            selected = false;
+            hinted = false;
+            clearing = false;
             bombTimer = -1f;
+            if (hexCollider != null)
+            {
+                hexCollider.enabled = true;
+            }
+
+            transform.localScale = Vector3.one;
+            EnsureStatusOverlay();
             ApplyVisual();
         }
 
@@ -65,14 +91,24 @@ namespace PokoPuzzle.Core
         {
             BlockSubtype = PokoBlockSubtype.None;
             IsBomb = true;
+            selected = false;
+            hinted = false;
+            clearing = false;
             BombType = bombType;
             bombTimer = bombType == BombType.Rainbow ? -1f : BombAutoDetonateTime;
+            if (hexCollider != null)
+            {
+                hexCollider.enabled = true;
+            }
+
+            transform.localScale = Vector3.one;
 
             if (bombType == BombType.Rainbow)
             {
                 spriteRenderer.sprite = GetOrCreateRainbowSprite();
                 spriteRenderer.color = Color.white;
                 spriteRenderer.sortingOrder = 3;
+                HideStatusOverlay();
             }
             else
             {
@@ -114,6 +150,24 @@ namespace PokoPuzzle.Core
             }
 
             return false;
+        }
+
+        public void PlayClearAndDestroy(float duration = 0.18f)
+        {
+            if (clearing)
+            {
+                return;
+            }
+
+            clearing = true;
+            selected = false;
+            hinted = false;
+            if (hexCollider != null)
+            {
+                hexCollider.enabled = false;
+            }
+
+            StartCoroutine(AnimateClearAndDestroy(duration));
         }
 
         private void SetHexCollider()
@@ -159,9 +213,15 @@ namespace PokoPuzzle.Core
 
         public void SetSelected(bool selected)
         {
-            if (!IsLinkable)
+            if (!IsLinkable || clearing)
             {
                 return;
+            }
+
+            this.selected = selected;
+            if (!selected)
+            {
+                hinted = false;
             }
 
             transform.localScale = selected ? Vector3.one * 1.18f : Vector3.one;
@@ -171,7 +231,13 @@ namespace PokoPuzzle.Core
 
         public void SetLinkHint(bool hinted)
         {
-            if (!IsLinkable)
+            if (!IsLinkable || clearing)
+            {
+                return;
+            }
+
+            this.hinted = hinted;
+            if (selected)
             {
                 return;
             }
@@ -179,6 +245,32 @@ namespace PokoPuzzle.Core
             transform.localScale = hinted ? Vector3.one * 1.08f : Vector3.one;
             spriteRenderer.sortingOrder = hinted ? 1 : 0;
             ApplyVisual(hinted ? 0.18f : 0f);
+        }
+
+        private void Update()
+        {
+            if (clearing)
+            {
+                return;
+            }
+
+            if (statusOverlay != null && statusOverlay.enabled)
+            {
+                var overlayPulse = IsFrozen
+                    ? 0.78f + Mathf.Sin(Time.time * 5f) * 0.12f
+                    : 0.84f + Mathf.Sin(Time.time * 3.5f) * 0.06f;
+                var color = statusOverlay.color;
+                color.a = overlayPulse;
+                statusOverlay.color = color;
+            }
+
+            if (!hinted || selected || !IsLinkable)
+            {
+                return;
+            }
+
+            var pulse = 1.05f + Mathf.Sin(Time.time * 8f) * 0.035f;
+            transform.localScale = Vector3.one * pulse;
         }
 
         private void ApplyVisual(float whiteBlend = 0f)
@@ -199,14 +291,21 @@ namespace PokoPuzzle.Core
             if (IsFrozen)
             {
                 color = Color.Lerp(color, FrozenTint, 0.5f);
+                ApplyStatusOverlay(new Color(0.72f, 0.9f, 1f, 0.82f), 1.07f, 4);
             }
             else if (IsStone)
             {
                 color = Color.Lerp(color, StoneTint, 0.6f);
+                ApplyStatusOverlay(new Color(0.38f, 0.38f, 0.38f, 0.88f), 1.04f, 3);
             }
             else if (IsClock)
             {
                 color = Color.Lerp(color, ClockTint, 0.4f);
+                HideStatusOverlay();
+            }
+            else
+            {
+                HideStatusOverlay();
             }
 
             spriteRenderer.color = color;
@@ -222,6 +321,77 @@ namespace PokoPuzzle.Core
             spriteRenderer.sprite = CreateBombSprite();
             spriteRenderer.color = BombType == BombType.Red ? new Color(1f, 0.2f, 0.2f) : new Color(0.2f, 0.4f, 1f);
             spriteRenderer.sortingOrder = 3;
+            HideStatusOverlay();
+        }
+
+        private IEnumerator AnimateClearAndDestroy(float duration)
+        {
+            var startScale = transform.localScale;
+            var startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+            var overlayStartColor = statusOverlay != null ? statusOverlay.color : Color.clear;
+            var time = 0f;
+            while (time < duration)
+            {
+                var t = time / duration;
+                var pop = t < 0.38f
+                    ? Mathf.Lerp(1f, 1.24f, t / 0.38f)
+                    : Mathf.Lerp(1.24f, 0.12f, (t - 0.38f) / 0.62f);
+                transform.localScale = startScale * pop;
+                if (spriteRenderer != null)
+                {
+                    var color = startColor;
+                    color.a = Mathf.Lerp(startColor.a, 0f, Mathf.Clamp01((t - 0.22f) / 0.78f));
+                    spriteRenderer.color = color;
+                    spriteRenderer.sortingOrder = 12;
+                }
+
+                if (statusOverlay != null)
+                {
+                    var color = overlayStartColor;
+                    color.a = Mathf.Lerp(overlayStartColor.a, 0f, t);
+                    statusOverlay.color = color;
+                    statusOverlay.sortingOrder = 13;
+                }
+
+                time += Time.deltaTime;
+                yield return null;
+            }
+
+            Destroy(gameObject);
+        }
+
+        private void EnsureStatusOverlay()
+        {
+            if (statusOverlay != null)
+            {
+                return;
+            }
+
+            var overlayObject = new GameObject("StatusOverlay");
+            overlayObject.transform.SetParent(transform, false);
+            overlayObject.transform.localPosition = Vector3.back * 0.02f;
+            overlayObject.transform.localScale = Vector3.one;
+            statusOverlay = overlayObject.AddComponent<SpriteRenderer>();
+            statusOverlay.sprite = GetOrCreateStatusOverlaySprite();
+            statusOverlay.enabled = false;
+            statusOverlay.sortingOrder = 3;
+        }
+
+        private void ApplyStatusOverlay(Color color, float scale, int sortingOrder)
+        {
+            EnsureStatusOverlay();
+            statusOverlay.enabled = true;
+            statusOverlay.color = color;
+            statusOverlay.sortingOrder = sortingOrder;
+            statusOverlay.transform.localScale = Vector3.one * scale;
+        }
+
+        private void HideStatusOverlay()
+        {
+            if (statusOverlay != null)
+            {
+                statusOverlay.enabled = false;
+            }
         }
 
         private static Sprite GetOrCreateRainbowSprite()
@@ -233,6 +403,46 @@ namespace PokoPuzzle.Core
 
             rainbowSprite = CreateRainbowGradient();
             return rainbowSprite;
+        }
+
+        private static Sprite GetOrCreateStatusOverlaySprite()
+        {
+            if (statusOverlaySprite != null)
+            {
+                return statusOverlaySprite;
+            }
+
+            const int size = 96;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+            var outerRadius = size * 0.45f;
+            var innerRadius = size * 0.35f;
+            var outer = new Vector2[6];
+            var inner = new Vector2[6];
+
+            for (var index = 0; index < 6; index++)
+            {
+                var angle = Mathf.Deg2Rad * (60f * index + 30f);
+                var cos = Mathf.Cos(angle);
+                var sin = Mathf.Sin(angle);
+                outer[index] = new Vector2(center.x + outerRadius * cos, center.y + outerRadius * sin);
+                inner[index] = new Vector2(center.x + innerRadius * cos, center.y + innerRadius * sin);
+            }
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var point = new Vector2(x, y);
+                    var inOuter = IsInsideHex(point, outer);
+                    var inInner = IsInsideHex(point, inner);
+                    texture.SetPixel(x, y, inOuter && !inInner ? Color.white : new Color(0f, 0f, 0f, 0f));
+                }
+            }
+
+            texture.Apply();
+            statusOverlaySprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+            return statusOverlaySprite;
         }
 
         private static Sprite CreateRainbowGradient()

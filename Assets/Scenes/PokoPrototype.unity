@@ -200,6 +200,10 @@ MonoBehaviour:
   targetScore: 10000
   levelConfig: {fileID: 0}
   enemyDatabase: {fileID: 0}
+  skillDatabase: {fileID: 0}
+  regularEnemyDatabase: {fileID: 0}
+  balanceProfileDatabase: {fileID: 0}
+  balanceProfileId: default
   enablePlayLog: 1
   playLogPath: md/playtest-logs/latest-playtest.jsonl
   boardCamera: {fileID: 1009113756}

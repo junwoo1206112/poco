@@ -81,6 +81,7 @@ namespace PokoPuzzle.Editor
             serializedBoard.FindProperty("skillDatabase").objectReferenceValue = AssetDatabase.LoadAssetAtPath<PokoEnemySkillDatabase>("Assets/PokoPuzzle/Data/Resources/PokoEnemySkillDatabase.asset");
             serializedBoard.FindProperty("regularEnemyDatabase").objectReferenceValue = AssetDatabase.LoadAssetAtPath<PokoRegularEnemyDatabase>("Assets/PokoPuzzle/Data/Resources/PokoRegularEnemyDatabase.asset");
             serializedBoard.FindProperty("balanceProfileDatabase").objectReferenceValue = AssetDatabase.LoadAssetAtPath<PokoBalanceProfileDatabase>("Assets/PokoPuzzle/Data/Resources/PokoBalanceProfileDatabase.asset");
+            serializedBoard.FindProperty("balanceProfileId").stringValue = "default";
             serializedBoard.FindProperty("moveLimit").intValue = 20;
             serializedBoard.FindProperty("targetScore").intValue = 10000;
             serializedBoard.FindProperty("enablePlayLog").boolValue = true;

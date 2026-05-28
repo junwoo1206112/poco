@@ -18,7 +18,7 @@ namespace PokoPuzzle.Core
         }
 
         public void WriteSessionStart(string levelId, int width, int height, int tileTypes,
-            int moveLimit, int timeLimit, int targetScore, bool useHexGrid)
+            int moveLimit, int timeLimit, int targetScore, bool useHexGrid, string balanceProfileId = "default")
         {
             if (!enabled) return;
 
@@ -32,6 +32,7 @@ namespace PokoPuzzle.Core
                 $"\"moveLimit\":{moveLimit}," +
                 $"\"timeLimit\":{timeLimit}," +
                 $"\"targetScore\":{targetScore}," +
+                $"\"balanceProfileId\":\"{EscapeJson(balanceProfileId)}\"," +
                 $"\"useHexGrid\":{JsonBool(useHexGrid)}" +
                 "}";
 

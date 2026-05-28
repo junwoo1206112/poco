@@ -14,22 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PokoPuzzle.Core.Data.PokoEnemyDatabase
   waves:
   - Wave: 1
-    Name: Frost Queen
+    Name: Frostbind Queen
     Hp: 240
     DefeatBonus: 500
   - Wave: 2
-    Name: Stone Golem
+    Name: Stoneheart Golem
     Hp: 300
     DefeatBonus: 550
   - Wave: 3
-    Name: Trickster Spirit
+    Name: Prism Trickster
     Hp: 380
     DefeatBonus: 600
   - Wave: 4
-    Name: Frost Wyrm
+    Name: Blizzard Wyrm
     Hp: 480
     DefeatBonus: 750
   - Wave: 5
-    Name: Chaos Lord
+    Name: Chroma Overlord
     Hp: 650
     DefeatBonus: 1000

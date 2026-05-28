@@ -139,16 +139,16 @@ namespace PokoPuzzle.Editor
                 new[] { "EnemyId", "Name", "HP", "ScoreBonus", "Role", "Enabled" },
                 new[]
                 {
-                    new[] { "1", "Snow Imp", "45", "50", "Normal", "TRUE" },
-                    new[] { "2", "Pebble Guard", "60", "75", "Normal", "TRUE" },
-                    new[] { "3", "Mirage Bat", "50", "60", "Flying", "TRUE" },
-                    new[] { "4", "Frost Larva", "75", "90", "Normal", "TRUE" },
-                    new[] { "5", "Void Imp", "70", "120", "Dark", "TRUE" },
-                    new[] { "6", "Glacial Wisp", "55", "55", "Flying", "TRUE" },
-                    new[] { "7", "Boulder Imp", "85", "85", "Armored", "TRUE" },
-                    new[] { "8", "Mirage Sprite", "40", "45", "Flying", "TRUE" },
-                    new[] { "9", "Rime Larva", "70", "70", "Normal", "TRUE" },
-                    new[] { "10", "Void Shade", "80", "110", "Dark", "TRUE" }
+                    new[] { "1", "Frostbinder Imp", "45", "50", "Normal", "TRUE" },
+                    new[] { "2", "Rime Wisp", "60", "75", "Flying", "TRUE" },
+                    new[] { "3", "Granite Mite", "50", "60", "Normal", "TRUE" },
+                    new[] { "4", "Crystal Guard", "75", "90", "Armored", "TRUE" },
+                    new[] { "5", "Prism Bat", "70", "120", "Flying", "TRUE" },
+                    new[] { "6", "Chroma Shifter", "55", "55", "Dark", "TRUE" },
+                    new[] { "7", "Icebound Larva", "85", "85", "Normal", "TRUE" },
+                    new[] { "8", "Stonehide Serpent", "40", "45", "Armored", "TRUE" },
+                    new[] { "9", "Hue Imp", "70", "70", "Dark", "TRUE" },
+                    new[] { "10", "Chroma Wisp", "80", "110", "Flying", "TRUE" }
                 });
             WriteSheet(
                 workbook,
@@ -156,11 +156,11 @@ namespace PokoPuzzle.Editor
                 new[] { "Wave", "Name", "HP", "DefeatBonus", "Enabled" },
                 new[]
                 {
-                    new[] { "1", "Frost Queen", "240", "500", "TRUE" },
-                    new[] { "2", "Stone Golem", "300", "550", "TRUE" },
-                    new[] { "3", "Trickster Spirit", "380", "600", "TRUE" },
-                    new[] { "4", "Frost Wyrm", "480", "750", "TRUE" },
-                    new[] { "5", "Chaos Lord", "650", "1000", "TRUE" }
+                    new[] { "1", "Frostbind Queen", "240", "500", "TRUE" },
+                    new[] { "2", "Stoneheart Golem", "300", "550", "TRUE" },
+                    new[] { "3", "Prism Trickster", "380", "600", "TRUE" },
+                    new[] { "4", "Blizzard Wyrm", "480", "750", "TRUE" },
+                    new[] { "5", "Chroma Overlord", "650", "1000", "TRUE" }
                 });
             WriteSheet(
                 workbook,
@@ -177,7 +177,7 @@ namespace PokoPuzzle.Editor
             WriteSheet(
                 workbook,
                 "BalanceProfile",
-                new[] { "ProfileId", "DisplayName", "MinAvailableChains", "TargetAverageChainLength", "RainbowGaugeMultiplier", "RefillAssistRate", "BlockerBudget", "RegularEnemyHpMultiplier", "BossHpMultiplier", "SkillCooldownMultiplier", "Enabled" },
+                new[] { "ProfileId", "DisplayName", "MinAvailableChains", "TargetAverageChainLength", "FeverGaugeMultiplier", "RefillAssistRate", "BlockerBudget", "RegularEnemyHpMultiplier", "BossHpMultiplier", "SkillCooldownMultiplier", "Enabled" },
                 new[]
                 {
                     new[] { "default", "Default", "3", "4.0", "1.0", "0.15", "2", "1.0", "1.0", "1.0", "TRUE" },

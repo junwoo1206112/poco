@@ -150,6 +150,7 @@ namespace PokoPuzzle.Editor
             var assetPath = args.GetString("assetPath", $"Assets/PokoPuzzle/Data/Generated/{levelId}.asset");
             var reportPath = args.GetString("reportPath", $"md/level-reports/{levelId}.md");
             var jsonPath = args.GetString("jsonPath", $"md/level-reports/{levelId}.json");
+            var balanceProfileId = args.GetString("balanceProfileId", "default");
 
             var board = GenerateBoard(width, height, tileTypes, seed);
             var telemetry = new BoardTelemetry(
@@ -173,7 +174,10 @@ namespace PokoPuzzle.Editor
                 useHexGrid,
                 suggestion.SuggestedMoveLimit,
                 suggestion.SuggestedTargetScore,
-                spawnWeights);
+                spawnWeights,
+                0,
+                0,
+                balanceProfileId);
 
             SaveLevelAsset(assetPath, levelConfig);
             WriteGeneratedLevelMarkdown(reportPath, assetPath, telemetry, suggestion, levelConfig, spawnWeights, useHexGrid, seed);
@@ -226,6 +230,7 @@ namespace PokoPuzzle.Editor
             var assetPath = args.GetString("assetPath", $"Assets/PokoPuzzle/Data/Generated/{levelId}.asset");
             var reportPath = args.GetString("reportPath", $"md/level-reports/{levelId}-retune.md");
             var jsonPath = args.GetString("jsonPath", $"md/level-reports/{levelId}-retune.json");
+            var balanceProfileId = args.GetString("balanceProfileId", "default");
 
             if (!File.Exists(logPath))
             {
@@ -245,7 +250,8 @@ namespace PokoPuzzle.Editor
                 analysis.SuggestedTargetScore,
                 spawnWeights,
                 analysis.SuggestedRegularEnemyHp,
-                analysis.SuggestedBossHp);
+                analysis.SuggestedBossHp,
+                balanceProfileId);
 
             SaveLevelAsset(assetPath, levelConfig);
             WriteRetunedLevelMarkdown(reportPath, logPath, assetPath, analysis, levelConfig, spawnWeights);
@@ -326,7 +332,7 @@ namespace PokoPuzzle.Editor
             }
 
             var promotedLevel = ScriptableObject.CreateInstance<PokoLevelConfig>();
-            promotedLevel.Configure(levelId, sourceLevel.Width, sourceLevel.Height, sourceLevel.TileTypes, sourceLevel.UseHexGrid, sourceLevel.MoveLimit, sourceLevel.TargetScore, sourceLevel.SpawnWeights);
+            promotedLevel.Configure(levelId, sourceLevel.Width, sourceLevel.Height, sourceLevel.TileTypes, sourceLevel.UseHexGrid, sourceLevel.MoveLimit, sourceLevel.TargetScore, sourceLevel.SpawnWeights, sourceLevel.RegularEnemyHp, sourceLevel.BossHp, sourceLevel.BalanceProfileId);
             SaveLevelAsset(assetPath, promotedLevel);
             WritePromotionReport(reportPath, experimentId, sourceAssetPath, assetPath, promotedLevel, results, recommendation, applyScene, scenePath);
             WritePortfolioMilestone(milestonePath, experimentId, assetPath, promotedLevel, results, recommendation);
@@ -601,6 +607,7 @@ namespace PokoPuzzle.Editor
                 $"- Tile types: `{levelConfig.TileTypes}`\n" +
                 $"- Move limit: `{levelConfig.MoveLimit}`\n" +
                 $"- Target score: `{levelConfig.TargetScore}`\n" +
+                $"- Balance profile: `{levelConfig.BalanceProfileId}`\n" +
                  $"- Spawn weights: `{FormatWeights(spawnWeights)}`\n\n" +
                  WriteHexGridVisual(telemetry.Width, telemetry.Height, telemetry.TileTypes, seed, useHexGrid) +
                  "## Why This Level Was Generated\n\n" +
@@ -631,6 +638,7 @@ namespace PokoPuzzle.Editor
                 $"  \"tileTypes\": {levelConfig.TileTypes},\n" +
                 $"  \"moveLimit\": {levelConfig.MoveLimit},\n" +
                 $"  \"targetScore\": {levelConfig.TargetScore},\n" +
+                $"  \"balanceProfileId\": \"{EscapeJson(levelConfig.BalanceProfileId)}\",\n" +
                 $"  \"spawnWeights\": [{FormatWeights(spawnWeights)}],\n" +
                 "  \"sourceTelemetry\": {\n" +
                 $"    \"possibleChains\": {telemetry.PossibleChains},\n" +
@@ -658,6 +666,7 @@ namespace PokoPuzzle.Editor
                 $"- Tile types: `{levelConfig.TileTypes}`\n" +
                 $"- Move limit: `{levelConfig.MoveLimit}`\n" +
                 $"- Target score: `{levelConfig.TargetScore}`\n" +
+                $"- Balance profile: `{levelConfig.BalanceProfileId}`\n" +
                 $"- Spawn weights: `{FormatWeights(levelConfig.SpawnWeights)}`\n\n" +
                 "## Why This Matters\n\n" +
                 "The designer agent output is now connected to the playable Unity scene, so the next Play session uses generated level tuning instead of only showing a report.\n";
@@ -682,6 +691,7 @@ namespace PokoPuzzle.Editor
             serializedBoard.FindProperty("useHexGrid").boolValue = levelConfig.UseHexGrid;
             serializedBoard.FindProperty("moveLimit").intValue = levelConfig.MoveLimit;
             serializedBoard.FindProperty("targetScore").intValue = levelConfig.TargetScore;
+            serializedBoard.FindProperty("balanceProfileId").stringValue = levelConfig.BalanceProfileId;
             serializedBoard.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -783,6 +793,7 @@ namespace PokoPuzzle.Editor
                 $"- Target score: `{levelConfig.TargetScore}`\n" +
                 $"- Regular enemy HP: `{levelConfig.RegularEnemyHp}`\n" +
                 $"- Boss HP: `{levelConfig.BossHp}`\n" +
+                $"- Balance profile: `{levelConfig.BalanceProfileId}`\n" +
                 $"- Spawn weights: `{FormatWeights(spawnWeights)}`\n\n" +
                 "## Agent Reasoning\n\n" +
                 $"{analysis.Action}\n";
@@ -806,6 +817,7 @@ namespace PokoPuzzle.Editor
                 $"  \"targetScore\": {levelConfig.TargetScore},\n" +
                 $"  \"regularEnemyHp\": {levelConfig.RegularEnemyHp},\n" +
                 $"  \"bossHp\": {levelConfig.BossHp},\n" +
+                $"  \"balanceProfileId\": \"{EscapeJson(levelConfig.BalanceProfileId)}\",\n" +
                 $"  \"spawnWeights\": [{FormatWeights(spawnWeights)}],\n" +
                 $"  \"reason\": \"{EscapeJson(analysis.Action)}\"\n" +
                 "}\n";
@@ -841,7 +853,8 @@ namespace PokoPuzzle.Editor
                     analysis.SuggestedTargetScore,
                     BuildSpawnWeights(controlTileTypes, analysis.DifficultyLabel),
                     controlRegHp,
-                    controlBossHp),
+                    controlBossHp,
+                    "default"),
                 CreateExperimentVariant(
                     experimentId,
                     assetRoot,
@@ -855,7 +868,8 @@ namespace PokoPuzzle.Editor
                     Mathf.Max(600, analysis.SuggestedTargetScore - 100),
                     BuildAssistedSpawnWeights(readabilityTileTypes),
                     readabilityRegHp,
-                    readabilityBossHp),
+                    readabilityBossHp,
+                    "readable"),
                 CreateExperimentVariant(
                     experimentId,
                     assetRoot,
@@ -869,7 +883,8 @@ namespace PokoPuzzle.Editor
                     analysis.SuggestedTargetScore + 300,
                     BuildAssistedSpawnWeights(comboTileTypes),
                     comboRegHp,
-                    comboBossHp)
+                    comboBossHp,
+                    "combo")
             };
         }
 
@@ -886,7 +901,8 @@ namespace PokoPuzzle.Editor
             int targetScore,
             int[] spawnWeights,
             int regularEnemyHp = 0,
-            int bossHp = 0)
+            int bossHp = 0,
+            string balanceProfileId = "default")
         {
             var levelId = $"{experimentId}_{suffix}";
             var assetPath = $"{assetRoot}/{levelId}.asset";
@@ -901,7 +917,8 @@ namespace PokoPuzzle.Editor
                 targetScore,
                 spawnWeights,
                 regularEnemyHp,
-                bossHp);
+                bossHp,
+                balanceProfileId);
 
             return new LevelExperimentVariant(suffix, focus, hypothesis, metric, assetPath, levelConfig, spawnWeights);
         }
@@ -944,6 +961,7 @@ namespace PokoPuzzle.Editor
                 body.AppendLine($"- Target score: `{variant.LevelConfig.TargetScore}`");
                 body.AppendLine($"- Regular enemy HP: `{variant.LevelConfig.RegularEnemyHp}`");
                 body.AppendLine($"- Boss HP: `{variant.LevelConfig.BossHp}`");
+                body.AppendLine($"- Balance profile: `{variant.LevelConfig.BalanceProfileId}`");
                 body.AppendLine($"- Spawn weights: `{FormatWeights(variant.SpawnWeights)}`");
                 body.AppendLine($"- Hypothesis: {variant.Hypothesis}");
                 body.AppendLine($"- Measure: {variant.Metric}");
@@ -987,6 +1005,7 @@ namespace PokoPuzzle.Editor
                 body.AppendLine($"      \"targetScore\": {variant.LevelConfig.TargetScore},");
                 body.AppendLine($"      \"regularEnemyHp\": {variant.LevelConfig.RegularEnemyHp},");
                 body.AppendLine($"      \"bossHp\": {variant.LevelConfig.BossHp},");
+                body.AppendLine($"      \"balanceProfileId\": \"{EscapeJson(variant.LevelConfig.BalanceProfileId)}\",");
                 body.AppendLine($"      \"spawnWeights\": [{FormatWeights(variant.SpawnWeights)}]");
                 body.Append("    }");
                 body.AppendLine(index == variants.Length - 1 ? string.Empty : ",");
@@ -1116,6 +1135,7 @@ namespace PokoPuzzle.Editor
             body.AppendLine($"- Tile types: `{promotedLevel.TileTypes}`");
             body.AppendLine($"- Move limit: `{promotedLevel.MoveLimit}`");
             body.AppendLine($"- Target score: `{promotedLevel.TargetScore}`");
+            body.AppendLine($"- Balance profile: `{promotedLevel.BalanceProfileId}`");
             body.AppendLine($"- Spawn weights: `{FormatWeights(promotedLevel.SpawnWeights)}`");
             body.AppendLine();
             body.AppendLine("## Supporting Experiment Results");

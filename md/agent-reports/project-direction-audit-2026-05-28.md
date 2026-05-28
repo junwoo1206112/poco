@@ -48,9 +48,9 @@ Rainbow moved from wildcard link tiles to the PokoPang-style rainbow bomb model:
 ## Changes Made In This Audit
 
 - Removed Rainbow as a regular block subtype.
-- Added gauge-driven `BombType.Rainbow` behavior.
+- Split the charge HUD into Fever gauge and kept Rainbow as a separate bomb reward.
 - Added Rainbow bomb detonation for same-color full-board clearing.
-- Added rainbow gauge HUD and `rainbow_ready` / `rainbow_cleared` play-log events.
+- Reinterpreted the top-right charge HUD as Fever gauge, while Rainbow remains a separate bomb event.
 - Fixed the `time-based-hp-tuning` OpenSpec delta header so all active specs validate.
 
 ## Recommended Next Work

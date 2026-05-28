@@ -10,11 +10,11 @@ Regular enemy HP was raised from the old 25-60 range to a 40-85 range.
 
 Boss HP was raised from the old 120-350 range to:
 
-- Frost Queen: 240
-- Stone Golem: 300
-- Trickster Spirit: 380
-- Frost Wyrm: 480
-- Chaos Lord: 650
+- Frostbind Queen: 240
+- Stoneheart Golem: 300
+- Prism Trickster: 380
+- Blizzard Wyrm: 480
+- Chroma Overlord: 650
 
 The values were applied to:
 
@@ -32,5 +32,5 @@ Boss enemies now show a red `BOSS` badge to the left of the enemy HP bar. The ba
 Play one 60-second round and verify:
 
 - First boss is readable as a boss before attacking.
-- Stone Golem and Trickster Spirit do not disappear too quickly.
+- Stoneheart Golem and Prism Trickster do not disappear too quickly.
 - Score can still reach the 10000 target without the round feeling stalled.

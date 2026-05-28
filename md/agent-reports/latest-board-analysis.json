@@ -1,0 +1,21 @@
+{
+  "layout": "hex",
+  "seed": 42,
+  "width": 4,
+  "height": 13,
+  "tileTypes": 6,
+  "possibleChains": 4,
+  "longestChain": 4,
+  "score": 0,
+  "movesUsed": 0,
+  "suggestion": {
+    "difficulty": "Hard",
+    "diagnosis": "4 starts / longest 4.",
+    "intent": "Avoid early dead-board frustration.",
+    "risk": "3-chain is hard to read.",
+    "action": "Lower types or add moves.",
+    "moveLimit": 24,
+    "targetScore": 1400,
+    "tileTypes": 5
+  }
+}

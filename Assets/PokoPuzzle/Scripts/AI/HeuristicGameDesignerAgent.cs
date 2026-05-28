@@ -12,12 +12,13 @@ namespace PokoPuzzle.AI
                 return new AgentSuggestion(
                     "Rainbow Heavy",
                     $"{telemetry.RainbowCleared} rainbow bombs cleared.",
-                    "Rainbow bombs were heavily used. Board felt easy.",
-                    "Rainbow gauge may be charging too quickly.",
-                    "Lower rainbow gauge multiplier or increase tile types.",
+                    "Board felt easy.",
+                    "Rainbow rewards may be appearing too often.",
+                    "Raise rainbow chain threshold or increase tile types.",
                     System.Math.Max(8, telemetry.MovesUsed - 2),
                     telemetry.Score + 200,
-                    System.Math.Min(6, telemetry.TileTypes + 1));
+                    System.Math.Min(6, telemetry.TileTypes + 1),
+                    100, 100);
             }
 
             if (telemetry.FeverActive)
@@ -30,7 +31,8 @@ namespace PokoPuzzle.AI
                     "Keep chain momentum; consider lowering target if Fever doesn't resolve.",
                     telemetry.MovesUsed + 15,
                     telemetry.Score + 800,
-                    telemetry.TileTypes);
+                    telemetry.TileTypes,
+                    130, 130);
             }
 
             if (telemetry.EnemyHp <= 0)
@@ -43,7 +45,8 @@ namespace PokoPuzzle.AI
                     "Consider slightly lower target or faster spawns next level.",
                     telemetry.MovesUsed + 12,
                     telemetry.Score + 500,
-                    telemetry.TileTypes);
+                    telemetry.TileTypes,
+                    150, 150);
             }
 
             if (telemetry.Combo >= 5)
@@ -56,7 +59,8 @@ namespace PokoPuzzle.AI
                     "Add a small move buffer to reward combo play.",
                     telemetry.MovesUsed + 10,
                     telemetry.Score + 400,
-                    telemetry.TileTypes);
+                    telemetry.TileTypes,
+                    110, 110);
             }
 
             if (telemetry.LongestChain >= 8 || chainDensity > 0.42f)
@@ -69,7 +73,8 @@ namespace PokoPuzzle.AI
                     "Raise target or add 1 tile type.",
                     18,
                     2600,
-                    telemetry.TileTypes + 1);
+                    telemetry.TileTypes + 1,
+                    130, 130);
             }
 
             if (telemetry.LongestChain <= 3 || chainDensity < 0.18f)
@@ -82,7 +87,8 @@ namespace PokoPuzzle.AI
                     "Lower types or add moves.",
                     24,
                     1400,
-                    System.Math.Max(3, telemetry.TileTypes - 1));
+                    System.Math.Max(3, telemetry.TileTypes - 1),
+                    80, 80);
             }
 
             return new AgentSuggestion(
@@ -93,7 +99,8 @@ namespace PokoPuzzle.AI
                 "Tune clear juice and target score.",
                 20,
                 10000,
-                telemetry.TileTypes);
+                telemetry.TileTypes,
+                100, 100);
         }
     }
 }

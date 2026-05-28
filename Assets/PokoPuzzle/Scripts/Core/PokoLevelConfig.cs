@@ -15,6 +15,7 @@ namespace PokoPuzzle.Core
         [SerializeField] private int[] spawnWeights = { 100, 100, 100, 100, 100 };
         [SerializeField] private int regularEnemyHp;
         [SerializeField] private int bossHp;
+        [SerializeField] private string balanceProfileId = "default";
 
         public string LevelId => levelId;
         public int Width => width;
@@ -26,8 +27,9 @@ namespace PokoPuzzle.Core
         public int[] SpawnWeights => spawnWeights;
         public int RegularEnemyHp => regularEnemyHp;
         public int BossHp => bossHp;
+        public string BalanceProfileId => string.IsNullOrWhiteSpace(balanceProfileId) ? "default" : balanceProfileId;
 
-        public void Configure(string newLevelId, int newWidth, int newHeight, int newTileTypes, bool newUseHexGrid, int newMoveLimit, int newTargetScore, int[] newSpawnWeights, int newRegularEnemyHp = 0, int newBossHp = 0)
+        public void Configure(string newLevelId, int newWidth, int newHeight, int newTileTypes, bool newUseHexGrid, int newMoveLimit, int newTargetScore, int[] newSpawnWeights, int newRegularEnemyHp = 0, int newBossHp = 0, string newBalanceProfileId = "default")
         {
             levelId = newLevelId;
             width = Mathf.Max(3, newWidth);
@@ -39,6 +41,7 @@ namespace PokoPuzzle.Core
             spawnWeights = NormalizeWeights(newSpawnWeights, tileTypes);
             regularEnemyHp = Mathf.Max(0, newRegularEnemyHp);
             bossHp = Mathf.Max(0, newBossHp);
+            balanceProfileId = string.IsNullOrWhiteSpace(newBalanceProfileId) ? "default" : newBalanceProfileId;
         }
 
         private static int[] NormalizeWeights(int[] source, int count)

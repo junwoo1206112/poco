@@ -7,7 +7,7 @@ namespace PokoPuzzle.Core.Data
         public string DisplayName;
         public int MinAvailableChains;
         public float TargetAverageChainLength;
-        public float RainbowGaugeMultiplier;
+        public float FeverGaugeMultiplier;
         public float RefillAssistRate;
         public int BlockerBudget;
         public float RegularEnemyHpMultiplier;
