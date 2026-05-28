@@ -6,7 +6,8 @@ namespace PokoPuzzle.Core
     public enum BombType
     {
         Red,
-        Blue
+        Blue,
+        Rainbow
     }
 
     public static class BoardBomb

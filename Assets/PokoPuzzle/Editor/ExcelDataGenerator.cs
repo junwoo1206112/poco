@@ -139,16 +139,16 @@ namespace PokoPuzzle.Editor
                 new[] { "EnemyId", "Name", "HP", "ScoreBonus", "Role", "Enabled" },
                 new[]
                 {
-                    new[] { "1", "Snow Imp", "30", "50", "Normal", "TRUE" },
-                    new[] { "2", "Pebble Guard", "45", "75", "Normal", "TRUE" },
-                    new[] { "3", "Mirage Bat", "35", "60", "Flying", "TRUE" },
-                    new[] { "4", "Frost Larva", "55", "90", "Normal", "TRUE" },
-                    new[] { "5", "Void Imp", "50", "120", "Dark", "TRUE" },
-                    new[] { "6", "Glacial Wisp", "40", "55", "Flying", "TRUE" },
-                    new[] { "7", "Boulder Imp", "60", "85", "Armored", "TRUE" },
-                    new[] { "8", "Mirage Sprite", "25", "45", "Flying", "TRUE" },
-                    new[] { "9", "Rime Larva", "50", "70", "Normal", "TRUE" },
-                    new[] { "10", "Void Shade", "60", "110", "Dark", "TRUE" }
+                    new[] { "1", "Snow Imp", "45", "50", "Normal", "TRUE" },
+                    new[] { "2", "Pebble Guard", "60", "75", "Normal", "TRUE" },
+                    new[] { "3", "Mirage Bat", "50", "60", "Flying", "TRUE" },
+                    new[] { "4", "Frost Larva", "75", "90", "Normal", "TRUE" },
+                    new[] { "5", "Void Imp", "70", "120", "Dark", "TRUE" },
+                    new[] { "6", "Glacial Wisp", "55", "55", "Flying", "TRUE" },
+                    new[] { "7", "Boulder Imp", "85", "85", "Armored", "TRUE" },
+                    new[] { "8", "Mirage Sprite", "40", "45", "Flying", "TRUE" },
+                    new[] { "9", "Rime Larva", "70", "70", "Normal", "TRUE" },
+                    new[] { "10", "Void Shade", "80", "110", "Dark", "TRUE" }
                 });
             WriteSheet(
                 workbook,
@@ -156,11 +156,11 @@ namespace PokoPuzzle.Editor
                 new[] { "Wave", "Name", "HP", "DefeatBonus", "Enabled" },
                 new[]
                 {
-                    new[] { "1", "Frost Queen", "120", "500", "TRUE" },
-                    new[] { "2", "Stone Golem", "150", "550", "TRUE" },
-                    new[] { "3", "Trickster Spirit", "200", "600", "TRUE" },
-                    new[] { "4", "Frost Wyrm", "250", "750", "TRUE" },
-                    new[] { "5", "Chaos Lord", "350", "1000", "TRUE" }
+                    new[] { "1", "Frost Queen", "240", "500", "TRUE" },
+                    new[] { "2", "Stone Golem", "300", "550", "TRUE" },
+                    new[] { "3", "Trickster Spirit", "380", "600", "TRUE" },
+                    new[] { "4", "Frost Wyrm", "480", "750", "TRUE" },
+                    new[] { "5", "Chaos Lord", "650", "1000", "TRUE" }
                 });
             WriteSheet(
                 workbook,

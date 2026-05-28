@@ -135,6 +135,20 @@ namespace PokoPuzzle.Editor
             var clear = string.Equals(Result, "clear", StringComparison.OrdinalIgnoreCase);
             var timeUp = string.Equals(Result, "time_up", StringComparison.OrdinalIgnoreCase);
             var invalidRate = ValidMoves + InvalidMoves == 0 ? 0f : (float)InvalidMoves / (ValidMoves + InvalidMoves);
+            var scoreRatio = TargetScore > 0 ? (float)FinalScore / TargetScore : 0f;
+            var observedTargetScore = Mathf.Max(1000, Mathf.CeilToInt(FinalScore * 0.75f / 100f) * 100);
+
+            if ((clear || timeUp) && scoreRatio >= 2f)
+            {
+                DifficultyLabel = "Too Easy";
+                Diagnosis = $"Player scored {FinalScore} ({scoreRatio * 100f:F0}% of target) in a full timed round.";
+                Risk = "The score target is too low for the current Fever, bomb, and enemy bonus throughput.";
+                Action = $"Raise the target score near {observedTargetScore} for the next pass.";
+                SuggestedMoveLimit = MoveLimit;
+                SuggestedTargetScore = observedTargetScore;
+                SuggestedTileTypes = TileTypes;
+                return;
+            }
 
             if (FeverTriggers >= 2)
             {
@@ -143,7 +157,7 @@ namespace PokoPuzzle.Editor
                 Risk = "Board may be too easy if Fever chains clear everything.";
                 Action = "Raise target score, add tile types, or increase enemy HP.";
                 SuggestedMoveLimit = Mathf.Max(8, MoveLimit - 2);
-                SuggestedTargetScore = TargetScore + 500;
+                SuggestedTargetScore = Mathf.Max(TargetScore + 500, observedTargetScore);
                 SuggestedTileTypes = Mathf.Min(6, TileTypes + 1);
                 return;
             }
@@ -165,9 +179,9 @@ namespace PokoPuzzle.Editor
                 DifficultyLabel = "Easy";
                 Diagnosis = $"Player scored {FinalScore} ({FinalScore * 100f / TargetScore:F0}% of target) with full time used. Level is too easy.";
                 Risk = "Players earn too many points too quickly for the time limit.";
-                Action = "Increase time limit or raise target score for the next pass.";
+                Action = $"Raise target score near {observedTargetScore} for the next pass.";
                 SuggestedMoveLimit = MoveLimit;
-                SuggestedTargetScore = TargetScore + 500;
+                SuggestedTargetScore = observedTargetScore;
                 SuggestedTileTypes = Mathf.Min(6, TileTypes + 1);
                 return;
             }

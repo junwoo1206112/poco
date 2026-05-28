@@ -29,6 +29,13 @@ namespace Tests
         }
 
         [Test]
+        public void Constructor_WithZeroWave_MarksRegularEnemy()
+        {
+            var enemy = new BoardEnemy(30, 50, "Regular", 0);
+            Assert.AreEqual(0, enemy.Wave);
+        }
+
+        [Test]
         public void ApplyDamage_ReducesHp()
         {
             var enemy = new BoardEnemy(100, 500, "Test", 1);

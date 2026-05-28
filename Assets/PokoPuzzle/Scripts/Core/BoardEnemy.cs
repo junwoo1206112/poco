@@ -20,7 +20,7 @@ namespace PokoPuzzle.Core
             CurrentHp = MaxHp;
             DefeatBonus = defeatBonus > 0 ? defeatBonus : BaseDefeatBonus;
             Name = name ?? "Monster";
-            Wave = Mathf.Max(1, wave);
+            Wave = wave >= 0 ? wave : 1;
         }
 
         public int ApplyDamage(int damage)
@@ -37,7 +37,7 @@ namespace PokoPuzzle.Core
 
         public void Reset(int? maxHp = null, int? defeatBonus = null, string name = null, int? wave = null)
         {
-            Wave = wave.HasValue && wave.Value > 0 ? wave.Value : 1;
+            Wave = wave.HasValue && wave.Value >= 0 ? wave.Value : 1;
             MaxHp = maxHp.HasValue && maxHp.Value > 0 ? maxHp.Value : BaseMaxHp;
             DefeatBonus = defeatBonus.HasValue && defeatBonus.Value > 0 ? defeatBonus.Value : BaseDefeatBonus;
             Name = name ?? "Monster";

@@ -5,7 +5,6 @@ namespace PokoPuzzle.Core
         None,
         Frozen,
         Stone,
-        Clock,
-        Rainbow
+        Clock
     }
 }

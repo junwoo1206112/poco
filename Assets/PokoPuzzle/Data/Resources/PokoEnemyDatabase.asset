@@ -15,21 +15,21 @@ MonoBehaviour:
   waves:
   - Wave: 1
     Name: Frost Queen
-    Hp: 120
+    Hp: 240
     DefeatBonus: 500
   - Wave: 2
     Name: Stone Golem
-    Hp: 150
+    Hp: 300
     DefeatBonus: 550
   - Wave: 3
     Name: Trickster Spirit
-    Hp: 200
+    Hp: 380
     DefeatBonus: 600
   - Wave: 4
     Name: Frost Wyrm
-    Hp: 250
+    Hp: 480
     DefeatBonus: 750
   - Wave: 5
     Name: Chaos Lord
-    Hp: 350
+    Hp: 650
     DefeatBonus: 1000

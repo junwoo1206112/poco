@@ -197,9 +197,8 @@ MonoBehaviour:
   tileVisualStyle: 0
   moveLimit: 20
   roundTime: 60
-  targetScore: 2200
+  targetScore: 10000
   levelConfig: {fileID: 0}
-  stageDatabase: {fileID: 0}
   enemyDatabase: {fileID: 0}
   enablePlayLog: 1
   playLogPath: md/playtest-logs/latest-playtest.jsonl

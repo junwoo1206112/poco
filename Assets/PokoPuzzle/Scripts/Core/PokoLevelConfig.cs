@@ -11,7 +11,7 @@ namespace PokoPuzzle.Core
         [SerializeField] private int tileTypes = 5;
         [SerializeField] private bool useHexGrid = true;
         [SerializeField] private int moveLimit = 20;
-        [SerializeField] private int targetScore = 2500;
+        [SerializeField] private int targetScore = 10000;
         [SerializeField] private int[] spawnWeights = { 100, 100, 100, 100, 100 };
         [SerializeField] private int regularEnemyHp;
         [SerializeField] private int bossHp;

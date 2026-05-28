@@ -15,51 +15,51 @@ MonoBehaviour:
   enemies:
   - EnemyId: 1
     Name: Snow Imp
-    Hp: 30
+    Hp: 45
     ScoreBonus: 50
     Role: Normal
   - EnemyId: 2
     Name: Pebble Guard
-    Hp: 45
+    Hp: 60
     ScoreBonus: 75
     Role: Normal
   - EnemyId: 3
     Name: Mirage Bat
-    Hp: 35
+    Hp: 50
     ScoreBonus: 60
     Role: Flying
   - EnemyId: 4
     Name: Frost Larva
-    Hp: 55
+    Hp: 75
     ScoreBonus: 90
     Role: Normal
   - EnemyId: 5
     Name: Void Imp
-    Hp: 50
+    Hp: 70
     ScoreBonus: 120
     Role: Dark
   - EnemyId: 6
     Name: Glacial Wisp
-    Hp: 40
+    Hp: 55
     ScoreBonus: 55
     Role: Flying
   - EnemyId: 7
     Name: Boulder Imp
-    Hp: 60
+    Hp: 85
     ScoreBonus: 85
     Role: Armored
   - EnemyId: 8
     Name: Mirage Sprite
-    Hp: 25
+    Hp: 40
     ScoreBonus: 45
     Role: Flying
   - EnemyId: 9
     Name: Rime Larva
-    Hp: 50
+    Hp: 70
     ScoreBonus: 70
     Role: Normal
   - EnemyId: 10
     Name: Void Shade
-    Hp: 60
+    Hp: 80
     ScoreBonus: 110
     Role: Dark

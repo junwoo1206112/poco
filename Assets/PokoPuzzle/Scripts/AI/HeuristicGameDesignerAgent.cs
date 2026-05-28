@@ -92,7 +92,7 @@ namespace PokoPuzzle.AI
                 "Clear feedback is still quiet.",
                 "Tune clear juice and target score.",
                 20,
-                2200,
+                10000,
                 telemetry.TileTypes);
         }
     }

@@ -28,6 +28,7 @@ namespace PokoPuzzle.Core
                 $"\"width\":{width}," +
                 $"\"height\":{height}," +
                 $"\"tileTypes\":{tileTypes}," +
+                "\"roundType\":\"timed_score_attack\"," +
                 $"\"moveLimit\":{moveLimit}," +
                 $"\"timeLimit\":{timeLimit}," +
                 $"\"targetScore\":{targetScore}," +
@@ -54,7 +55,8 @@ namespace PokoPuzzle.Core
                 $"\"gainedScore\":{gainedScore}," +
                 $"\"score\":{score}," +
                 $"\"movesUsed\":{movesUsed}," +
-                $"\"movesLeft\":{Mathf.Max(0, moveLimit - movesUsed)}," +
+                $"\"moveTarget\":{moveLimit}," +
+                $"\"movesOverTarget\":{Mathf.Max(0, movesUsed - moveLimit)}," +
                 $"\"timeLeft\":{timeRemaining}," +
                 $"\"possibleChains\":{possibleChains}," +
                 $"\"longestChain\":{longestChain}" +

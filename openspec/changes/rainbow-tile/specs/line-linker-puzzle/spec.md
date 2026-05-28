@@ -24,10 +24,10 @@ The system SHALL allow the player to drag across 6-direction adjacent same-type 
 - **WHEN** the player has 1-2 tiles in the active chain and drags back to the previous tile
 - **THEN** the last tile is removed from the active chain (back-drag still works below 3)
 
-#### Scenario: Chain commits at 3
+#### Scenario: Rainbow chain commits on release
 
-- **WHEN** the active chain reaches 3 linked tiles (with or without Rainbow)
-- **THEN** the chain commits irreversibly and executes immediately
+- **WHEN** the player releases a chain containing 3 or more linked tiles (with or without Rainbow)
+- **THEN** the chain commits as a valid clear
 
 ### Requirement: Scoring with rainbow bonus
 

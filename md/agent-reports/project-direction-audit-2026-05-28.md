@@ -35,14 +35,11 @@ The latest play log is currently only a session start plus one enemy skill event
 
 `poko-core-mechanics/tasks.md` still shows 0/55 tasks even though code and milestone notes show many of those systems exist. This makes the project look less complete than it is and should be reconciled after Unity play verification.
 
-4. Core-feel mismatch risk
+4. Core-feel decision
 
-The milestone says irreversible one-stroke commits automatically at 3 linked tiles, but current code still commits on release. Decide whether the intended player feel is:
+The project previously had a mismatch between some OpenSpec/milestone text, which promised automatic commit at 3 linked tiles, and the current playable code, which commits on release.
 
-- PokoPang-like immediate commit at the third tile, or
-- Safer drag-preview until release.
-
-This should be a deliberate design choice, because it changes how fast and irreversible the puzzle feels.
+Decision: keep release-committed chain execution for this portfolio slice. This preserves readable drag preview, matches the main line-linker spec, avoids extra input-edge bugs, and keeps attention on the designer-agent loop.
 
 5. Rainbow behavior risk
 
@@ -69,10 +66,6 @@ tools\poko-cli.cmd designer-loop-status --reportPath md/designer-loop/latest-sta
 
 2. Reconcile `poko-core-mechanics/tasks.md` after play verification.
 
-3. Decide the irreversible link behavior and update either code or spec:
+3. Track the Unity-generated `.meta` files that correspond to tracked scripts/tests, or intentionally remove the source files and their metas together if those files are obsolete.
 
-- If immediate commit is the goal, implement commit-on-third-link.
-- If release commit is the goal, update the spec/milestone wording to avoid promising a different feel.
-
-4. Capture a short portfolio milestone only after the evidence files match the current scene and play log.
-
+4. Capture a short portfolio milestone only after the evidence files include one full-round play log with an `end` event.

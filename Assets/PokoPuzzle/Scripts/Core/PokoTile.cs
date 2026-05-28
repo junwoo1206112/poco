@@ -20,8 +20,7 @@ namespace PokoPuzzle.Core
         public bool IsFrozen => BlockSubtype == PokoBlockSubtype.Frozen;
         public bool IsStone => BlockSubtype == PokoBlockSubtype.Stone;
         public bool IsClock => BlockSubtype == PokoBlockSubtype.Clock;
-        public bool IsRainbow => BlockSubtype == PokoBlockSubtype.Rainbow;
-        public bool IsLinkable => (BlockSubtype == PokoBlockSubtype.None || BlockSubtype == PokoBlockSubtype.Clock || BlockSubtype == PokoBlockSubtype.Rainbow) && !IsBomb;
+        public bool IsLinkable => (BlockSubtype == PokoBlockSubtype.None || BlockSubtype == PokoBlockSubtype.Clock) && !IsBomb;
 
         private float bombTimer = -1f;
         private const float BombAutoDetonateTime = 5f;
@@ -59,12 +58,6 @@ namespace PokoPuzzle.Core
             BlockSubtype = subtype;
             IsBomb = false;
             bombTimer = -1f;
-
-            if (subtype == PokoBlockSubtype.Rainbow)
-            {
-                spriteRenderer.sprite = GetOrCreateRainbowSprite();
-            }
-
             ApplyVisual();
         }
 
@@ -74,7 +67,17 @@ namespace PokoPuzzle.Core
             IsBomb = true;
             BombType = bombType;
             bombTimer = BombAutoDetonateTime;
-            ApplyBombVisual();
+
+            if (bombType == BombType.Rainbow)
+            {
+                spriteRenderer.sprite = GetOrCreateRainbowSprite();
+                spriteRenderer.color = Color.white;
+                spriteRenderer.sortingOrder = 3;
+            }
+            else
+            {
+                ApplyBombVisual();
+            }
         }
 
         public bool TickBombTimer(float deltaTime)
@@ -90,8 +93,16 @@ namespace PokoPuzzle.Core
                 return true;
             }
 
-            var flash = bombTimer <= 1f && Mathf.FloorToInt(bombTimer * 4f) % 2 == 0;
-            if (flash)
+            if (BombType == BombType.Rainbow)
+            {
+                var flash = bombTimer <= 1f && Mathf.FloorToInt(bombTimer * 4f) % 2 == 0;
+                spriteRenderer.color = flash ? new Color(1f, 1f, 1f, 0.5f) : Color.white;
+                spriteRenderer.sortingOrder = flash ? 4 : 3;
+                return false;
+            }
+
+            var flash2 = bombTimer <= 1f && Mathf.FloorToInt(bombTimer * 4f) % 2 == 0;
+            if (flash2)
             {
                 spriteRenderer.color = Color.white;
             }
@@ -174,13 +185,6 @@ namespace PokoPuzzle.Core
         {
             if (spriteRenderer == null)
             {
-                return;
-            }
-
-            if (IsRainbow)
-            {
-                spriteRenderer.color = Color.white;
-                spriteRenderer.sortingOrder = whiteBlend > 0f ? 2 : 0;
                 return;
             }
 
