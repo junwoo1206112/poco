@@ -14,6 +14,7 @@ nul
 # Visual Studio
 *.csproj
 *.sln
+*.slnx
 *.sln.DotSettings.user
 *.suo
 *.user

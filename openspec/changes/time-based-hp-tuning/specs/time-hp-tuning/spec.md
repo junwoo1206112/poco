@@ -1,8 +1,4 @@
-## Purpose
-
-Defines the time-based HP tuning engine: how play log analysis derives suggested enemy and boss HP adjustments from clear time performance, and how those suggestions flow into level configs and experiments.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: HP suggestion from play log analysis
 

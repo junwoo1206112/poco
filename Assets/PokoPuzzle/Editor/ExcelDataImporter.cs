@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -370,3 +371,4 @@ namespace PokoPuzzle.Editor
         }
     }
 }
+#endif

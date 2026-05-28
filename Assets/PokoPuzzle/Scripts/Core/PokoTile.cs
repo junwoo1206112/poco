@@ -21,7 +21,7 @@ namespace PokoPuzzle.Core
         public bool IsStone => BlockSubtype == PokoBlockSubtype.Stone;
         public bool IsClock => BlockSubtype == PokoBlockSubtype.Clock;
         public bool IsRainbow => BlockSubtype == PokoBlockSubtype.Rainbow;
-        public bool IsLinkable => (BlockSubtype == PokoBlockSubtype.None || BlockSubtype == PokoBlockSubtype.Clock) && !IsBomb;
+        public bool IsLinkable => (BlockSubtype == PokoBlockSubtype.None || BlockSubtype == PokoBlockSubtype.Clock || BlockSubtype == PokoBlockSubtype.Rainbow) && !IsBomb;
 
         private float bombTimer = -1f;
         private const float BombAutoDetonateTime = 5f;

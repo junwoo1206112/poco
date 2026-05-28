@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.IO;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
@@ -244,3 +245,4 @@ namespace PokoPuzzle.Editor
         }
     }
 }
+#endif
