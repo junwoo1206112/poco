@@ -161,7 +161,7 @@ namespace PokoPuzzle.Editor
                         DisplayName = GetCellValue(row.GetCell(1))?.Trim() ?? string.Empty,
                         MinAvailableChains = ParseInt(GetCellValue(row.GetCell(2))),
                         TargetAverageChainLength = ParseFloat(GetCellValue(row.GetCell(3))),
-                        RainbowSpawnWeight = ParseFloat(GetCellValue(row.GetCell(4))),
+                        RainbowGaugeMultiplier = ParseFloat(GetCellValue(row.GetCell(4))),
                         RefillAssistRate = ParseFloat(GetCellValue(row.GetCell(5))),
                         BlockerBudget = ParseInt(GetCellValue(row.GetCell(6))),
                         RegularEnemyHpMultiplier = ParseFloat(GetCellValue(row.GetCell(7))),

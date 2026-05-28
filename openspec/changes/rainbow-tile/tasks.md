@@ -1,46 +1,47 @@
 ## 1. Data Model
 
-- [x] 1.1 Add `Rainbow` value to `PokoBlockSubtype` enum in `PokoBlockType.cs`
-- [x] 1.2 Add `IsRainbow` property to `PokoTile` (`BlockSubtype == PokoBlockSubtype.Rainbow`)
-- [x] 1.3 Update `IsLinkable` to return true for Rainbow subtype
-- [x] 1.4 Add `RainbowCleared` field to `BoardTelemetry`
+- [x] 1.1 Add `Rainbow` to `BombType`.
+- [x] 1.2 Remove Rainbow from `PokoBlockSubtype`.
+- [x] 1.3 Remove `PokoTile.IsRainbow` regular tile behavior.
+- [x] 1.4 Keep `RainbowCleared` telemetry for AI/designer analysis.
 
-## 2. Rainbow Tile Visual
+## 2. Rainbow Bomb Visual
 
-- [x] 2.1 Create `CreateRainbowGradient()` static method: generate a 96×96 Texture2D with horizontal rainbow gradient (red→yellow→green→blue→purple-magenta→back-to-red)
-- [x] 2.2 Modify `PokoTile.ApplyBombVisual()` pattern or add equivalent `ApplyRainbowVisual()`: override sprite with the gradient texture when `IsRainbow` is true
-- [x] 2.3 Ensure rainbow visual persists through selection/hint state changes
+- [x] 2.1 Generate a multicolor rainbow sprite for `BombType.Rainbow`.
+- [x] 2.2 Ensure rainbow bombs do not use red/blue bomb tinting.
+- [x] 2.3 Ensure rainbow bombs do not auto-detonate on the normal bomb timer.
 
-## 3. Rainbow Link Logic
+## 3. Rainbow Gauge
 
-- [x] 3.1 Modify `TryAddTileAtPointer()` in `LineLinkerBoard.cs`: when the last selected tile OR the candidate tile is Rainbow, skip the type-matching check (`tile.Type != last.Type`)
-- [x] 3.2 Verify back-drag (RemoveLastSelectedTile) still works correctly with Rainbow tiles in the chain
-- [x] 3.3 Verify that a chain starting with a Rainbow tile allows the second tile of any type
-- [x] 3.4 Verify `RefreshLinkHints()` shows hints from Rainbow tiles to all adjacent linkable tiles
+- [x] 3.1 Add `rainbowGauge` state to `LineLinkerBoard`.
+- [x] 3.2 Fill the gauge when blocks are cleared.
+- [x] 3.3 Create a rainbow bomb when the gauge reaches the threshold.
+- [x] 3.4 Preserve gauge overflow and keep the gauge full if no empty spawn cell exists.
+- [x] 3.5 Reset gauge on round restart.
 
-## 4. Rainbow Scoring Bonus and Tap Ability
+## 4. Rainbow Bomb Detonation
 
-- [x] 4.1 Modify `ClearMatchedTiles()`: check if any tile in `selectedTiles` is Rainbow, apply ×1.5 multiplier to `gainedScore` before adding to total score
-- [x] 4.2 Log `rainbow_cleared` event in play log when a rainbow-inclusive chain is cleared
-- [x] 4.3 Add `TryActivateRainbowAtPointer()`: on tap, removes all tiles of the most common type on the board with 50pts per tile
-- [x] 4.4 Add `rainbow_tap` combat event logging
+- [x] 4.1 Add `DetonateRainbowBomb()`.
+- [x] 4.2 Remove all linkable tiles of the most common color.
+- [x] 4.3 Award score from removed tile count.
+- [x] 4.4 Log `rainbow_ready` and `rainbow_cleared` combat events.
 
-## 5. Board Generation and Refill
+## 5. HUD
 
-- [x] 5.1 Update `RandomSubtype()` to include Rainbow in the random roll (equal probability with Frozen, Stone, Clock)
-- [ ] 5.2 Verify rainbow tiles appear on initial board build and after refill
+- [x] 5.1 Add rainbow gauge bar to `BoardHudRenderer`.
+- [x] 5.2 Keep feedback text from overlapping the gauge bar.
 
 ## 6. AI Agent and Telemetry
 
-- [x] 6.1 Update `HeuristicGameDesignerAgent` to check `RainbowCleared` in telemetry
-- [x] 6.2 Add rainbow-aware difficulty suggestion (high rainbow usage → label Easy, suggest lower spawn rate)
-- [x] 6.3 Update `PlayLogAnalysis` in `PokoPuzzleCli.cs` to parse `rainbow_cleared` events
+- [x] 6.1 Keep `RainbowCleared` in `BoardTelemetry`.
+- [x] 6.2 Keep rainbow-aware difficulty suggestions based on rainbow bomb usage.
+- [x] 6.3 Keep `PlayLogAnalysis` parsing `rainbow_cleared` events.
 
 ## 7. Unity Verification
 
-- [ ] 7.1 Open Unity and confirm compilation succeeds
-- [ ] 7.2 Enter Play mode and verify rainbow tiles appear on the board with gradient visual
-- [ ] 7.3 Drag from a Red tile through a Rainbow tile to a Blue tile → chain of 3 accepted
-- [ ] 7.4 Verify ×1.5 score bonus on rainbow-inclusive chains
-- [ ] 7.5 Verify no console errors during extended play with rainbow tiles
-- [ ] 7.6 Run CLI `analyze-playlog` and confirm rainbow events in report
+- [ ] 7.1 Open Unity and confirm compilation succeeds.
+- [ ] 7.2 Enter Play mode and verify the rainbow gauge fills as blocks are cleared.
+- [ ] 7.3 Verify a rainbow bomb appears when the gauge fills.
+- [ ] 7.4 Verify tapping the rainbow bomb clears all tiles of one color.
+- [ ] 7.5 Verify no console errors during extended play with rainbow bombs.
+- [ ] 7.6 Run CLI `analyze-playlog` and confirm rainbow events in report.

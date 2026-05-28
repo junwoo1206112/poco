@@ -715,7 +715,7 @@ namespace PokoPuzzle.Editor
                  $"- Bombs generated: `{analysis.BombsGenerated}`\n" +
                  $"- Bombs detonated: `{analysis.BombsDetonated}`\n" +
                  $"- Special blocks cleared: `{analysis.SpecialBlocksCleared}`\n" +
-                 $"- Rainbow tiles cleared: `{analysis.RainbowCleared}`\n\n" +
+                 $"- Rainbow bombs cleared: `{analysis.RainbowCleared}`\n\n" +
                  "## Designer Agent Judgment\n\n" +
                 $"- Difficulty: `{analysis.DifficultyLabel}`\n" +
                 $"- Diagnosis: {analysis.Diagnosis}\n" +

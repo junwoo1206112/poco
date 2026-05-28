@@ -1,59 +1,34 @@
-## Context
+# Design: Rainbow Gauge Bomb
 
-The current prototype has 6 typed tile colors (Red, Yellow, Green, Blue, Purple, Orange) plus special blocks (Frozen, Stone, Clock) and Bombs. All linking logic requires identical types between adjacent tiles. There is no wildcard mechanic.
+## Overview
 
-PokoPang's rainbow tile acts as a wildcard: it has no color of its own and can bridge chains between any two types. This creates strategic depth — players can use rainbow tiles to extend chains across color boundaries.
-
-The rainbow tile is visually distinct with a multicolor gradient pattern (no single tint).
-
-## Goals / Non-Goals
-
-**Goals:**
-- Rainbow block subtype added to `PokoBlockSubtype` enum.
-- Rainbow tiles are linkable and can bridge any two tile types in a chain.
-- When a rainbow tile is the first selected tile, it "inherits" the type of the next linked tile.
-- When a rainbow tile is in the middle or end of a chain, it acts as a bridge to the next tile regardless of type.
-- Rainbow tiles render with a runtime-generated rainbow gradient texture.
-- Rainbow clear awards base score ×1.5 bonus multiplier.
-- Rainbow tile usage tracked in BoardTelemetry.
-
-**Non-Goals:**
-- No new art assets (gradient is runtime-generated).
-- No changes to bomb, frozen, stone, or clock behavior.
-- Rainbow tiles do not appear as a regular tile color in RandomType() — they only appear via RandomSubtype or manual placement.
+Rainbow is implemented as a charged bomb rather than a normal tile. Normal chain clears fill `rainbowGauge`; when it reaches `RainbowGaugeMax`, the board creates a `BombType.Rainbow` in an empty cell. The player detonates that bomb to clear all linkable tiles of the most common color.
 
 ## Decisions
 
-### Rainbow tile is a BlockSubtype, not a PokoTileType
-- **Decision**: Rainbow uses `PokoBlockSubtype.Rainbow` (new enum value), keeping the tile's `PokoTileType` as a visible color for rendering.
-- **Rationale**: Rainbow tiles should display as rainbow-patterned, not as one of the 6 colors. Using BlockSubtype for the wildcard behavior is consistent with how Frozen/Stone/Clock work.
-- **Trade-off**: The tile's `Type` property still holds a PokoTileType value (used for render fallback), but it's semantically meaningless for rainbow tiles.
+### Rainbow as BombType
 
-### Wildcard bridge behavior, not type inheritance
-- **Decision**: Rainbow tiles allow chain extension from any type to any type. When a rainbow is in the chain, the "last type" check in TryAddTileAtPointer is bypassed.
-- **Rationale**: Simpler implementation than type inheritance. The player experiences rainbow as "I can always drag through it."
-- **Alternatives considered**: Type inheritance would require tracking "effective type" through the chain, adding complexity.
+- **Decision**: Use `BombType.Rainbow`, not `PokoBlockSubtype.Rainbow`.
+- **Rationale**: The desired behavior is a charged board-clearing bomb, not a wildcard link tile.
 
-### Rainbow generated at refill, not at build
-- **Decision**: Rainbow tiles appear during board generation and refill via `RandomSubtype()` with ~6% probability (same as other special blocks), not as a replaceable tile color.
-- **Rationale**: Rainbow is an occasional strategic bonus, not a core tile type. Low probability keeps it special.
+### Player-activated detonation
 
-### Visual: Gradient overlay on standard hex
-- **Decision**: Rainbow tiles render with a horizontal multicolor gradient generated as a runtime Texture2D, overlaid on the standard hex border.
-- **Rationale**: Instantly recognizable as "special" without needing art assets.
+- **Decision**: Rainbow bombs do not use the normal 5-second bomb auto-detonation timer.
+- **Rationale**: A charged rainbow bomb should feel like a player-owned tactical tool.
 
-### Scoring: ×1.5 multiplier for rainbow-inclusive chains
-- **Decision**: When a chain contains at least one rainbow tile, the base score is multiplied by 1.5 (before combo multiplier).
-- **Rationale**: Rewards players for incorporating rainbows into chains. Not a flat bonus to avoid exploiting.
+### Most-common color targeting
 
-## Risks / Trade-offs
+- **Decision**: The rainbow bomb removes every linkable tile of the most common tile type.
+- **Rationale**: This approximates "remove all same-colored blocks" without requiring the player to choose a color UI yet.
 
-- [Risk] Rainbow link bypass could feel unintuitive if the player expects a rainbow to have a specific color → Mitigation: Clear visual distinction (rainbow gradient) signals "wildcard."
-- [Risk] ×1.5 multiplier could make rainbow-heavy boards too easy → Mitigation: Low spawn probability (6%). AI agent can detect overuse and suggest lowering it.
-- [Risk] Rainbow tiles conflict with IsLinkable logic for special blocks → Mitigation: IsLinkable returns true for Rainbow (same as Clock), and TryAddTileAtPointer handles the type-bridge logic.
+### Gauge overflow
 
-## Portfolio Evidence
+- **Decision**: When a bomb spawns, gauge overflow is preserved. If no empty spawn cell is available, the gauge stays full.
+- **Rationale**: The player should not lose gauge progress because the board has not collapsed/refilled yet.
 
-- Play logs will include `rainbow_cleared` events.
-- CLI `analyze-playlog` report shows rainbow usage count.
-- AI designer agent can suggest tuning rainbow probability based on play data.
+## Risks
+
+- [Risk] Rainbow bomb spawns during the clear-before-collapse window and may visually move during collapse.
+  - Mitigation: It is still a board tile and participates in the normal collapse flow.
+- [Risk] Most-common auto-targeting may feel less intentional than color selection.
+  - Mitigation: Keep this as the prototype baseline; add color selection later only if playtests need more agency.

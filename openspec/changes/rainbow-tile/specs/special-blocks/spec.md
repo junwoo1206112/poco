@@ -1,20 +1,15 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
-### Requirement: Rainbow block subtype
+### Requirement: Special block subtypes
 
-The system SHALL support Rainbow as a new `PokoBlockSubtype` value alongside Frozen, Stone, and Clock.
+The system SHALL support Frozen, Stone, and Clock as `PokoBlockSubtype` values. Rainbow SHALL NOT be a regular block subtype.
 
-#### Scenario: Rainbow tile is created
+#### Scenario: Special subtype is created
 
-- **WHEN** a tile is assigned the Rainbow subtype
-- **THEN** its `BlockSubtype` is `PokoBlockSubtype.Rainbow`, it is linkable, and renders with a rainbow gradient pattern
+- **WHEN** a tile is assigned Frozen, Stone, or Clock
+- **THEN** its `BlockSubtype` reflects that special state and its tile behavior follows the subtype rules
 
-#### Scenario: Rainbow tile is linkable
+#### Scenario: Rainbow is not a regular subtype
 
-- **WHEN** a Rainbow tile exists on the board
-- **THEN** `IsLinkable` returns true for the tile (same as Clock)
-
-#### Scenario: Rainbow tile spawn probability
-
-- **WHEN** the board generates or refills
-- **THEN** Rainbow tiles have a ~6% chance of appearing via `RandomSubtype()`, the same rate as other special blocks
+- **WHEN** a rainbow effect is created
+- **THEN** it is represented as a `BombType.Rainbow` bomb generated from the rainbow gauge, not as `PokoBlockSubtype.Rainbow`

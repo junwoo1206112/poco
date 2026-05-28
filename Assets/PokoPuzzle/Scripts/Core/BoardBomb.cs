@@ -29,7 +29,12 @@ namespace PokoPuzzle.Core
                 return GetRedBombPositions(column, row, height);
             }
 
-            return GetBlueBombPositions(column, row, height);
+            if (bombType == BombType.Blue)
+            {
+                return GetBlueBombPositions(column, row, height);
+            }
+
+            return System.Array.Empty<Vector2Int>();
         }
 
         private static IEnumerable<Vector2Int> GetRedBombPositions(int column, int row, int height)

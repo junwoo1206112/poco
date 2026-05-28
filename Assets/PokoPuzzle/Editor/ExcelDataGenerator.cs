@@ -177,7 +177,7 @@ namespace PokoPuzzle.Editor
             WriteSheet(
                 workbook,
                 "BalanceProfile",
-                new[] { "ProfileId", "DisplayName", "MinAvailableChains", "TargetAverageChainLength", "RainbowSpawnWeight", "RefillAssistRate", "BlockerBudget", "RegularEnemyHpMultiplier", "BossHpMultiplier", "SkillCooldownMultiplier", "Enabled" },
+                new[] { "ProfileId", "DisplayName", "MinAvailableChains", "TargetAverageChainLength", "RainbowGaugeMultiplier", "RefillAssistRate", "BlockerBudget", "RegularEnemyHpMultiplier", "BossHpMultiplier", "SkillCooldownMultiplier", "Enabled" },
                 new[]
                 {
                     new[] { "default", "Default", "3", "4.0", "1.0", "0.15", "2", "1.0", "1.0", "1.0", "TRUE" },

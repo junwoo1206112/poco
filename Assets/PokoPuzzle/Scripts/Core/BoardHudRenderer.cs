@@ -240,7 +240,7 @@ namespace PokoPuzzle.Core
                 var feedbackWidth = Mathf.Min(Screen.width - margin * 2f, 340f * scale);
                 var feedbackPanel = new Rect(
                     (Screen.width - feedbackWidth) * 0.5f,
-                    scorePanel.yMax + (enemy != null ? 30f * scale : 6f * scale),
+                    scorePanel.yMax + (enemy != null ? 48f * scale : 24f * scale),
                     feedbackWidth,
                     32f * scale);
 

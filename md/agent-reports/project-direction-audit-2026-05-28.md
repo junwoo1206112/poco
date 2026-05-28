@@ -41,17 +41,16 @@ The project previously had a mismatch between some OpenSpec/milestone text, whic
 
 Decision: keep release-committed chain execution for this portfolio slice. This preserves readable drag preview, matches the main line-linker spec, avoids extra input-edge bugs, and keeps attention on the designer-agent loop.
 
-5. Rainbow behavior risk
+5. Rainbow behavior update
 
-Rainbow tiles were specified as wildcard link tiles, but runtime behavior did not fully match. This audit pass corrected the main linkability, wildcard, score bonus, and logging path.
+Rainbow moved from wildcard link tiles to the PokoPang-style rainbow bomb model: block clears fill a gauge, the gauge creates a Rainbow bomb, and detonating that bomb removes all linkable tiles of the most common color.
 
 ## Changes Made In This Audit
 
-- Made Rainbow subtype linkable.
-- Allowed Rainbow tiles to bridge different tile types during drag.
-- Moved Rainbow tap activation to single-tile release, so a Rainbow tile can also start a chain.
-- Applied the 1.5x Rainbow score bonus for Rainbow-inclusive chains.
-- Logged `rainbow_cleared` events for chain clears and tap clears.
+- Removed Rainbow as a regular block subtype.
+- Added gauge-driven `BombType.Rainbow` behavior.
+- Added Rainbow bomb detonation for same-color full-board clearing.
+- Added rainbow gauge HUD and `rainbow_ready` / `rainbow_cleared` play-log events.
 - Fixed the `time-based-hp-tuning` OpenSpec delta header so all active specs validate.
 
 ## Recommended Next Work

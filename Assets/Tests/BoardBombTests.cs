@@ -75,5 +75,12 @@ namespace Tests
             var positions = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Red).ToList();
             Assert.GreaterOrEqual(positions.Count, 7);
         }
+
+        [Test]
+        public void RainbowBomb_UsesBoardDetonationLogic()
+        {
+            var positions = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Rainbow).ToList();
+            Assert.AreEqual(0, positions.Count);
+        }
     }
 }

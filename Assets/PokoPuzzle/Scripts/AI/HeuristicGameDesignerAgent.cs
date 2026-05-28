@@ -11,10 +11,10 @@ namespace PokoPuzzle.AI
             {
                 return new AgentSuggestion(
                     "Rainbow Heavy",
-                    $"{telemetry.RainbowCleared} rainbows cleared.",
-                    "Rainbow tiles were heavily used for bridging. Board felt easy.",
-                    "Rainbow spawn rate may be too high.",
-                    "Lower rainbow probability or increase tile types.",
+                    $"{telemetry.RainbowCleared} rainbow bombs cleared.",
+                    "Rainbow bombs were heavily used. Board felt easy.",
+                    "Rainbow gauge may be charging too quickly.",
+                    "Lower rainbow gauge multiplier or increase tile types.",
                     System.Math.Max(8, telemetry.MovesUsed - 2),
                     telemetry.Score + 200,
                     System.Math.Min(6, telemetry.TileTypes + 1));

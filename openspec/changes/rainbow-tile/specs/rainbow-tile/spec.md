@@ -1,48 +1,48 @@
 ## ADDED Requirements
 
-### Requirement: Rainbow tile as wildcard
+### Requirement: Rainbow gauge bomb
 
-The system SHALL support a Rainbow tile subtype that acts as a wildcard, allowing chain linking between any adjacent tile types.
+The system SHALL fill a rainbow gauge as blocks are cleared and create a Rainbow bomb when the gauge reaches its threshold.
 
-#### Scenario: Rainbow tile bridges two different types
+#### Scenario: Gauge fills from clears
 
-- **WHEN** the player drags from a Red tile to an adjacent Rainbow tile, then to a Blue tile
-- **THEN** the chain includes all three tiles (Red, Rainbow, Blue) as a valid chain of length 3
+- **WHEN** the player clears blocks through normal chain play
+- **THEN** the rainbow gauge increases based on the number of cleared blocks
 
-#### Scenario: Rainbow tile starts a chain
+#### Scenario: Rainbow bomb is created
 
-- **WHEN** the player starts a drag on a Rainbow tile and drags to an adjacent Green tile
-- **THEN** the Rainbow tile is added as the first tile, and the Green tile is added as the second tile
+- **WHEN** the rainbow gauge reaches its threshold and an empty board cell is available
+- **THEN** the board creates a `BombType.Rainbow` bomb in an empty cell and resets the gauge with any overflow preserved
 
-#### Scenario: Rainbow tile is in the middle of a chain
+#### Scenario: Rainbow bomb waits for player activation
 
-- **WHEN** the player has a chain of Yellow → Rainbow and drags to a Purple tile adjacent to the Rainbow
-- **THEN** the Purple tile is added to the chain regardless of Yellow and Purple being different types
+- **WHEN** a rainbow bomb is on the board
+- **THEN** it remains available until the player detonates it instead of auto-detonating on the normal bomb timer
 
-### Requirement: Rainbow tile visual
+### Requirement: Rainbow bomb detonation
 
-The system SHALL render Rainbow tiles with a distinct multicolor gradient pattern so players can instantly identify them.
+The system SHALL make a Rainbow bomb remove all linkable tiles of the most common color on the board.
 
-#### Scenario: Rainbow tile appears on the board
+#### Scenario: Player detonates rainbow bomb
 
-- **WHEN** a tile is configured as Rainbow subtype
-- **THEN** it renders with a horizontal rainbow gradient (red → yellow → green → blue → purple) and no single-color tint
+- **WHEN** the player detonates a rainbow bomb
+- **THEN** the board identifies the most common linkable tile type and removes every linkable tile of that type
 
-#### Scenario: Rainbow tile is selected or hinted
+#### Scenario: Rainbow bomb scores
 
-- **WHEN** a Rainbow tile is selected or hinted during drag
-- **THEN** its visual changes (scale/overlay) similar to normal tiles but the rainbow gradient remains visible
+- **WHEN** a rainbow bomb removes tiles
+- **THEN** the player gains score based on the removed tile count and the play log records a `rainbow_cleared` event
 
-### Requirement: Rainbow tile scoring bonus
+### Requirement: Rainbow bomb visual and HUD
 
-The system SHALL apply a 1.5x score multiplier when a cleared chain contains at least one Rainbow tile.
+The system SHALL render rainbow bombs with a distinct multicolor visual and show rainbow gauge progress in the HUD.
 
-#### Scenario: Chain with rainbow scores more
+#### Scenario: Rainbow bomb appears on the board
 
-- **WHEN** the player clears a chain of 4 tiles that includes a Rainbow tile
-- **THEN** the base score is `(4 × 4 × 10) × 1.5 = 240` before combo multiplier
+- **WHEN** a tile is configured as `BombType.Rainbow`
+- **THEN** it renders with a multicolor gradient pattern
 
-#### Scenario: Chain without rainbow scores normally
+#### Scenario: Rainbow gauge appears on the HUD
 
-- **WHEN** the player clears a chain of 4 tiles with no Rainbow tile
-- **THEN** the base score is `(4 × 4 × 10) = 160` before combo multiplier
+- **WHEN** the screen HUD is enabled
+- **THEN** the HUD displays current rainbow gauge progress

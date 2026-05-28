@@ -66,7 +66,7 @@ namespace PokoPuzzle.Core
             BlockSubtype = PokoBlockSubtype.None;
             IsBomb = true;
             BombType = bombType;
-            bombTimer = BombAutoDetonateTime;
+            bombTimer = bombType == BombType.Rainbow ? -1f : BombAutoDetonateTime;
 
             if (bombType == BombType.Rainbow)
             {
