@@ -37,3 +37,4 @@
 {"event":"move","valid":true,"chainLength":4,"gainedScore":160,"score":5155,"movesUsed":14,"moveTarget":20,"movesOverTarget":0,"timeLeft":30,"possibleChains":13,"longestChain":6}
 {"event":"combat","combatEvent":"enemy_damage","value1":30,"value2":10,"combo":2,"feverActive":false,"enemyHp":10,"enemyMaxHp":240,"timeLeft":28}
 {"event":"move","valid":true,"chainLength":3,"gainedScore":90,"score":5245,"movesUsed":15,"moveTarget":20,"movesOverTarget":0,"timeLeft":28,"possibleChains":14,"longestChain":8}
+{"event":"combat","combatEvent":"enemy_skill","value1":1,"value2":3,"combo":0,"feverActive":false,"enemyHp":10,"enemyMaxHp":240,"timeLeft":19}

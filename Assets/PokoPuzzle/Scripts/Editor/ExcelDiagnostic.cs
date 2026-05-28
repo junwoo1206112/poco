@@ -19,7 +19,7 @@ namespace PokoPuzzle.Editor
                 return;
             }
 
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using var workbook = new XSSFWorkbook(stream);
 
             var sheet = workbook.GetSheet("Boss");
