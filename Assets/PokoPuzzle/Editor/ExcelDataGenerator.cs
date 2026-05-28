@@ -206,6 +206,11 @@ namespace PokoPuzzle.Editor
             for (var index = 0; index < headers.Length; index++)
             {
                 sheet.AutoSizeColumn(index);
+                var minWidth = Mathf.Max(headers[index].Length + 2, 8) * 256;
+                if (sheet.GetColumnWidth(index) < minWidth)
+                {
+                    sheet.SetColumnWidth(index, minWidth);
+                }
             }
         }
 

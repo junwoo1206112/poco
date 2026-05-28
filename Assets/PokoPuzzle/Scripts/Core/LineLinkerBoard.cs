@@ -11,7 +11,7 @@ namespace PokoPuzzle.Core
         [Header("Board")]
         [SerializeField] private int width = 4;
         [SerializeField] private int height = 13;
-        [SerializeField] private int tileTypes = 5;
+        [SerializeField] private int tileTypes = 6;
         [SerializeField] private float spacing = 0.74f;
         [SerializeField] private bool useHexGrid = true;
         [SerializeField] private PokoTileVisualStyle tileVisualStyle = PokoTileVisualStyle.CircleInHex;

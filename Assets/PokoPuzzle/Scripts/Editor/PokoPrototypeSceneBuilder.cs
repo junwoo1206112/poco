@@ -28,7 +28,7 @@ namespace PokoPuzzle.Editor
         public bool UseHexGrid { get; }
         public PokoTileVisualStyle TileVisualStyle { get; }
 
-        public static PokoPrototypeSceneSettings Default => new("Assets/Scenes/PokoPrototype.unity", 4, 13, 5, 0.74f, true, PokoTileVisualStyle.CircleInHex);
+        public static PokoPrototypeSceneSettings Default => new("Assets/Scenes/PokoPrototype.unity", 4, 13, 6, 0.74f, true, PokoTileVisualStyle.CircleInHex);
     }
 
     public static class PokoPrototypeSceneBuilder

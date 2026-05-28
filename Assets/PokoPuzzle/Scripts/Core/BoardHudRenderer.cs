@@ -56,12 +56,12 @@ namespace PokoPuzzle.Core
 
             var boardHalfHeight = Mathf.Max(1f, (height - 1) * spacing * (useHexGrid ? HexGridUtility.VerticalSpacingRatio : 1f) * 0.5f);
             var boardHalfWidth = Mathf.Max(1f, width * spacing * 0.5f);
-            var verticalSize = boardHalfHeight + 2.25f;
-            var horizontalSize = boardHalfWidth / Mathf.Max(0.5f, boardCamera.aspect) + 1.5f;
+            var verticalSize = boardHalfHeight + 3.5f;
+            var horizontalSize = boardHalfWidth / Mathf.Max(0.5f, boardCamera.aspect) + 2f;
             boardCamera.orthographicSize = Mathf.Max(boardCamera.orthographicSize, 6.6f, verticalSize, horizontalSize);
 
             var cameraPosition = boardCamera.transform.position;
-            boardCamera.transform.position = new Vector3(cameraPosition.x, 0.72f, cameraPosition.z);
+            boardCamera.transform.position = new Vector3(cameraPosition.x, 0.95f, cameraPosition.z);
         }
 
         public void PrepareHud()
@@ -123,7 +123,7 @@ namespace PokoPuzzle.Core
         {
             if (scoreText != null)
             {
-                scoreText.text = $"Score {score}\nEnemy {enemySpawnIndex + 1}  {timeRemaining}s";
+                scoreText.text = $"Score {score}\nTime {timeRemaining}";
             }
         }
 
@@ -148,101 +148,91 @@ namespace PokoPuzzle.Core
 
             var scale = Mathf.Clamp(Screen.height / 720f, 0.82f, 1.12f);
             var margin = Mathf.RoundToInt(16f * scale);
-            var scoreWidth = Mathf.Min(Screen.width - margin * 2f, 400f * scale);
-            var scorePanel = new Rect((Screen.width - scoreWidth) * 0.5f, margin, scoreWidth, 82f * scale);
-            var comboText = feverActive ? $"FEVER! ({feverTimerInt}s)" : comboCount > 0 ? $"Combo x{comboCount}" : "";
+            var panelWidth = Mathf.Min(Screen.width - margin * 2f, 360f * scale);
+            var panelCenterX = (Screen.width - panelWidth) * 0.5f;
 
-            DrawHudPanel(scorePanel);
+            var topPanel = new Rect(panelCenterX, margin, panelWidth, 72f * scale);
+            DrawHudPanel(topPanel);
+
+            var comboText = feverActive ? $"FEVER! ({feverTimerInt}s)" : comboCount > 0 ? $"Combo x{comboCount}" : "";
+            var scoreLabel = score >= targetScore ? $"Score {score}" : $"Score {score} / {targetScore}";
             GUI.Label(
-                new Rect(scorePanel.x + 12f * scale, scorePanel.y + 5f * scale, scorePanel.width - 24f * scale, 26f * scale),
-                $"Score {score}" + (string.IsNullOrEmpty(comboText) ? "" : $"  |  {comboText}"),
-                CreateHudStyle(feverActive ? 24f : 20f, FontStyle.Bold, feverActive ? new Color(1f, 0.4f, 0.1f) : Color.white, scale, TextAnchor.UpperCenter));
+                new Rect(topPanel.x + 10f * scale, topPanel.y + 4f * scale, topPanel.width - 20f * scale, 22f * scale),
+                string.IsNullOrEmpty(comboText) ? scoreLabel : $"{scoreLabel}  |  {comboText}",
+                CreateHudStyle(feverActive ? 22f : 18f, FontStyle.Bold, feverActive ? new Color(1f, 0.4f, 0.1f) : Color.white, scale, TextAnchor.UpperCenter));
+
+            var timerColor = timeRemaining <= 10 ? new Color(1f, 0.3f, 0.3f) : new Color(0.86f, 0.93f, 1f);
             GUI.Label(
-                new Rect(scorePanel.x + 12f * scale, scorePanel.y + 32f * scale, scorePanel.width - 24f * scale, 22f * scale),
-                $"Target {targetScore}  |  Enemy {enemySpawnIndex}  |  Time {timeRemaining}s",
-                CreateHudStyle(15f, FontStyle.Normal, new Color(0.86f, 0.93f, 1f), scale, TextAnchor.UpperCenter));
+                new Rect(topPanel.x + 10f * scale, topPanel.y + 28f * scale, topPanel.width - 20f * scale, 20f * scale),
+                $"TIME  {timeRemaining}",
+                CreateHudStyle(22f, FontStyle.Bold, timerColor, scale, TextAnchor.UpperCenter));
+
+            var enemyInfoY = topPanel.yMax + 4f * scale;
 
             if (enemy != null)
             {
                 var isBoss = enemy.Wave > 0;
-                var badgeWidth = 68f * scale;
-                var badgeGap = 6f * scale;
-                var maxEnemyWidth = Screen.width - margin * 2f;
-                var eBarWidth = isBoss
-                    ? Mathf.Min(Mathf.Max(150f * scale, maxEnemyWidth - badgeWidth - badgeGap), 260f * scale)
-                    : Mathf.Min(maxEnemyWidth, 260f * scale);
+                var eBarWidth = Mathf.Min(Screen.width - margin * 2f, 280f * scale);
                 var eBarHeight = 18f * scale;
-                var groupWidth = isBoss ? badgeWidth + badgeGap + eBarWidth : eBarWidth;
-                var groupX = (Screen.width - groupWidth) * 0.5f;
-                var eBarX = isBoss ? groupX + badgeWidth + badgeGap : groupX;
-                var eBarY = scorePanel.yMax + 6f * scale;
-
-                if (isBoss)
-                {
-                    DrawBossBadge(new Rect(groupX, eBarY - 8f * scale, badgeWidth, eBarHeight + 16f * scale), enemy.Wave, scale);
-                }
+                var eBarX = (Screen.width - eBarWidth) * 0.5f;
+                var eBarY = enemyInfoY;
 
                 DrawHudPanel(new Rect(eBarX - 4f * scale, eBarY - 2f * scale, eBarWidth + 8f * scale, eBarHeight + 4f * scale));
-                var eBarColor = enemy.IsDefeated ? new Color(0.5f, 0.5f, 0.5f, 0.5f) : GUI.color;
-                GUI.color = eBarColor;
+
+                var fillColor = isBoss ? new Color(0.85f, 0.15f, 0.15f) : new Color(0.2f, 0.6f, 1f);
+                if (enemy.IsDefeated)
+                {
+                    GUI.color = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+                }
+                else
+                {
+                    GUI.color = fillColor;
+                }
                 GUI.Box(new Rect(eBarX, eBarY, eBarWidth * enemy.HpRatio, eBarHeight), GUIContent.none);
                 GUI.color = Color.white;
                 GUI.Label(
                     new Rect(eBarX, eBarY, eBarWidth, eBarHeight),
-                    enemy.IsDefeated ? $"Defeated!" : $"{enemy.Name}  {enemy.CurrentHp}/{enemy.MaxHp}",
+                    enemy.IsDefeated ? "DEFEATED!" : $"{enemy.Name}  {enemy.CurrentHp}/{enemy.MaxHp}",
                     CreateHudStyle(13f, FontStyle.Bold, Color.white, scale, TextAnchor.MiddleCenter));
+
+                if (isBoss)
+                {
+                    GUI.Label(
+                        new Rect(eBarX, eBarY - 16f * scale, eBarWidth, 14f * scale),
+                        $"BOSS WAVE {enemy.Wave}",
+                        CreateHudStyle(11f, FontStyle.Bold, new Color(1f, 0.9f, 0.55f), scale, TextAnchor.UpperCenter));
+                }
+
+                enemyInfoY = eBarY + eBarHeight + 4f * scale;
             }
 
             if (rainbowGaugeMax > 0f)
             {
                 var gaugeRatio = Mathf.Clamp01(rainbowGauge / rainbowGaugeMax);
-                var gBarWidth = Mathf.Min(Screen.width - margin * 2f, 160f * scale);
+                var gBarWidth = Mathf.Min(Screen.width - margin * 2f, 180f * scale);
                 var gBarHeight = 10f * scale;
                 var gBarX = (Screen.width - gBarWidth) * 0.5f;
-                var gBarY = scorePanel.yMax + (enemy != null ? 28f * scale : 6f * scale);
+                var gBarY = enemyInfoY;
 
                 DrawHudPanel(new Rect(gBarX - 4f * scale, gBarY - 2f * scale, gBarWidth + 8f * scale, gBarHeight + 4f * scale));
-                if (gaugeRatio >= 1f)
-                {
-                    GUI.color = new Color(0.8f, 0.4f, 1f);
-                }
-                else
-                {
-                    GUI.color = Color.Lerp(new Color(0.3f, 0.3f, 0.5f), new Color(0.8f, 0.4f, 1f), gaugeRatio);
-                }
+                var gaugeColor = gaugeRatio >= 1f ? new Color(0.8f, 0.4f, 1f) : Color.Lerp(new Color(0.3f, 0.3f, 0.5f), new Color(0.8f, 0.4f, 1f), gaugeRatio);
+                GUI.color = gaugeColor;
                 GUI.Box(new Rect(gBarX, gBarY, gBarWidth * gaugeRatio, gBarHeight), GUIContent.none);
                 GUI.color = Color.white;
-                var gaugeLabel = gaugeRatio >= 1f ? "Rainbow Ready!" : $"Rainbow {Mathf.RoundToInt(gaugeRatio * 100f)}%";
+                var gaugeLabel = gaugeRatio >= 1f ? "RAINBOMB READY" : $"RAINBOW {Mathf.RoundToInt(gaugeRatio * 100f)}%";
                 GUI.Label(
                     new Rect(gBarX, gBarY, gBarWidth, gBarHeight),
                     gaugeLabel,
                     CreateHudStyle(9f, FontStyle.Bold, gaugeRatio >= 1f ? new Color(0.8f, 0.4f, 1f) : new Color(0.7f, 0.7f, 0.8f), scale, TextAnchor.MiddleCenter));
             }
 
-            if (!string.IsNullOrWhiteSpace(agentHudText))
-            {
-                var agentWidth = Mathf.Min(Screen.width - margin * 2f, 390f * scale);
-                var agentPanel = new Rect(
-                    (Screen.width - agentWidth) * 0.5f,
-                    Screen.height - 80f * scale,
-                    agentWidth,
-                    68f * scale);
-
-                DrawHudPanel(agentPanel);
-                GUI.Label(
-                    new Rect(agentPanel.x + 12f * scale, agentPanel.y + 8f * scale, agentPanel.width - 24f * scale, agentPanel.height - 12f * scale),
-                    agentHudText,
-                    CreateHudStyle(13f, FontStyle.Normal, new Color(0.65f, 0.92f, 1f), scale, TextAnchor.UpperLeft));
-            }
-
             if (!string.IsNullOrWhiteSpace(feedbackMessage) && feedbackClearTime > Time.time)
             {
                 var feedbackWidth = Mathf.Min(Screen.width - margin * 2f, 340f * scale);
+                var feedbackY = enemyInfoY + (rainbowGaugeMax > 0f ? 22f * scale : 4f * scale);
                 var feedbackPanel = new Rect(
-                    (Screen.width - feedbackWidth) * 0.5f,
-                    scorePanel.yMax + (enemy != null ? 48f * scale : 24f * scale),
-                    feedbackWidth,
-                    32f * scale);
+                    (Screen.width - feedbackWidth) * 0.5f, feedbackY,
+                    feedbackWidth, 32f * scale);
 
                 DrawHudPanel(feedbackPanel);
                 GUI.Label(
@@ -308,11 +298,11 @@ namespace PokoPuzzle.Core
             DrawHudPanel(panel);
             GUI.Label(
                 new Rect(panel.x + 18f * scale, panel.y + 18f * scale, panel.width - 36f * scale, 40f * scale),
-                score >= targetScore ? "TARGET CLEAR" : "TIME UP",
+                score >= targetScore ? "GAME CLEAR" : "TIME UP",
                 CreateHudStyle(28f, FontStyle.Bold, score >= targetScore ? new Color(0.40f, 1f, 0.55f) : new Color(1f, 0.42f, 0.42f), scale, TextAnchor.UpperCenter));
             GUI.Label(
                 new Rect(panel.x + 18f * scale, panel.y + 66f * scale, panel.width - 36f * scale, 34f * scale),
-                "60s score attack complete.",
+                $"Score {score} / Target {targetScore}",
                 CreateHudStyle(15f, FontStyle.Normal, Color.white, scale, TextAnchor.UpperCenter));
 
             if (GUI.Button(
