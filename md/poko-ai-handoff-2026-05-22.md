@@ -37,7 +37,7 @@ The current runtime rules are hexagonal already:
 - adjacency uses six directions
 - linking accepts only adjacent same-type tiles
 
-The current tile art is still a placeholder circle sprite. That means the board logic is hex, but the visual shape does not yet read as a PokoPang-style hex tile. The next visual board pass should replace the circle placeholder with an original hex tile presentation, not copied PokoPang art.
+The tile art has moved beyond the old circle placeholder. Runtime tile sprites now use generated hex frames/colliders, and the latest visual pass strengthens hex boundaries with bright white grid lines, a thin inner groove, clear-pop shake, camera shake, and hex shard bursts. Keep this original and do not copy protected PokoPang art.
 
 ### Play Loop
 

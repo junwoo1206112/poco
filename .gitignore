@@ -32,7 +32,10 @@ nul
 .DS_Store
 Thumbs.db
 Desktop.ini
-
+ 
 # Node / Python
 node_modules/
 __pycache__/
+
+# Build logs
+unity_batch_log.txt

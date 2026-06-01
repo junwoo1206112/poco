@@ -11,11 +11,11 @@ namespace PokoPuzzle.Core
     {
         [Header("Board")]
         [SerializeField] private int width = 4;
-        [SerializeField] private int height = 13;
-        [SerializeField] private int tileTypes = 6;
-        [SerializeField] private float spacing = 0.74f;
+        [SerializeField] private int height = 9;
+        [SerializeField] private int tileTypes = 5;
+        [SerializeField] private float spacing = 0.85f;
         [SerializeField] private bool useHexGrid = true;
-        [SerializeField] private PokoTileVisualStyle tileVisualStyle = PokoTileVisualStyle.CircleInHex;
+        [SerializeField] private PokoTileVisualStyle tileVisualStyle = PokoTileVisualStyle.Hex;
         [SerializeField] private int moveLimit = 999;
         [SerializeField] private float roundTime = 60f;
         [SerializeField] private int targetScore = 10000;
@@ -62,6 +62,7 @@ namespace PokoPuzzle.Core
         private const float ComboWindow = 2.5f;
         private const float FeverDuration = 6f;
         private const int FeverComboThreshold = 7;
+        private const int TimeBonusSeconds = 2;
 
         private PlayLogger playLogger;
         private BoardHudRenderer hudRenderer;
@@ -97,9 +98,9 @@ namespace PokoPuzzle.Core
         private int currentGroupBossWave;
         private int[] currentGroupRegulars = new int[2];
 
-        private float feverGauge;
-        private const float FeverGaugeMax = 100f;
-        private const float FeverGaugeFillPerBlock = 4f;
+        private float rainbowGauge;
+        private const float RainbowGaugeMax = 100f;
+        private const float RainbowGaugeFillPerBlock = 5f;
 
         private readonly List<PokoTile> bombTiles = new();
 
@@ -195,6 +196,11 @@ namespace PokoPuzzle.Core
                 dragging = false;
                 EndDrag();
             }
+            else if (dragging && !isPressed)
+            {
+                dragging = false;
+                EndDrag();
+            }
         }
 
         private void BuildBoard()
@@ -278,14 +284,20 @@ namespace PokoPuzzle.Core
                 if (tile.IsBomb)
                 {
                     DetonateBomb(tile);
+                    dragging = false;
+                    return;
                 }
                 else if (tile.IsFrozen)
                 {
-                    hudRenderer.ShowFeedback("Frozen - clear adjacent tile", new Color(0.6f, 0.8f, 1f), 1.5f);
+                    hudRenderer.ShowFeedback("Frozen - clear adjacent tile to unlock", new Color(0.6f, 0.8f, 1f), 1.5f);
+                    dragging = false;
+                    return;
                 }
                 else if (tile.IsStone)
                 {
                     hudRenderer.ShowFeedback("Stone - falls to bottom", new Color(0.5f, 0.5f, 0.5f), 1.5f);
+                    dragging = false;
+                    return;
                 }
                 else
                 {
@@ -300,6 +312,7 @@ namespace PokoPuzzle.Core
         private void ContinueDrag(Vector2 screenPosition)
         {
             TryAddTileAtPointer(screenPosition);
+            RefreshLine();
         }
 
         private void EndDrag()
@@ -333,12 +346,19 @@ namespace PokoPuzzle.Core
             score += gainedScore;
             effectRenderer?.PlayChainClear(selectedPositions, chainCenter, gainedScore, feverActive);
             ApplyEnemyDamage(chainLength, chainCenter);
-            TryPlaceBomb(chainLength);
-            ClearAdjacentFrozenTiles();
+            var chainEnd = selectedTiles.Count > 0
+                ? new Vector2Int(selectedTiles[^1].Column, selectedTiles[^1].Row)
+                : (Vector2Int?)null;
+            var chainTileType = selectedTiles.Count > 0 ? selectedTiles[^1].Type : PokoTileType.Red;
+            var createdBomb = TryPlaceBomb(chainLength, chainEnd, chainTileType, out var createdBombType);
+            UnlockAdjacentFrozenTiles();
 
             CollapseAndRefill();
             movesUsed++;
-            hudRenderer.ShowFeedback($"Nice! +{gainedScore}", new Color(1f, 0.88f, 0.24f), 1.5f);
+            var feedback = createdBomb
+                ? $"{createdBombType} Bomb Created! +{gainedScore}"
+                : $"Nice! +{gainedScore}";
+            hudRenderer.ShowFeedback(feedback, createdBomb ? new Color(1f, 0.55f, 0.16f) : new Color(1f, 0.88f, 0.24f), 1.5f);
             RunDesignerAgent();
             playLogger?.LogMove(true, chainLength, gainedScore, score, movesUsed, moveLimit,
                 Mathf.CeilToInt(timeRemaining), CountPossibleChains(), FindLongestChain());
@@ -374,7 +394,6 @@ namespace PokoPuzzle.Core
 
             feverActive = true;
             feverTimer = FeverDuration;
-            feverGauge = 0f;
             hudRenderer.ShowFeedback("FEVER!", new Color(1f, 0.4f, 0.1f), 2f);
             effectRenderer?.PlayFeverStart();
             playLogger?.LogFeverEvent("start", comboCount, Mathf.CeilToInt(timeRemaining));
@@ -477,13 +496,66 @@ namespace PokoPuzzle.Core
 
         private bool TryDetonateBombAtPointer(Vector2 screenPosition)
         {
-            var tile = TileAtPointer(screenPosition);
-            if (tile == null || !tile.IsBomb)
+            if (boardCamera == null)
             {
                 return false;
             }
 
-            DetonateBomb(tile);
+            PokoTile bombTile = null;
+
+            var closest = TileAtPointer(screenPosition);
+            if (closest != null && closest.IsBomb)
+            {
+                bombTile = closest;
+            }
+
+            if (bombTile == null)
+            {
+                var worldPosition = boardCamera.ScreenToWorldPoint(screenPosition);
+                var worldPoint = new Vector2(worldPosition.x, worldPosition.y);
+                var hits = Physics2D.OverlapCircleAll(worldPoint, 0.35f);
+                PokoTile found = null;
+                var foundDist = float.MaxValue;
+                for (var index = 0; index < hits.Length; index++)
+                {
+                    var tile = hits[index].GetComponent<PokoTile>();
+                    if (tile != null && tile.IsBomb && tile.gameObject.activeInHierarchy)
+                    {
+                        var dist = (worldPoint - new Vector2(tile.transform.position.x, tile.transform.position.y)).sqrMagnitude;
+                        if (dist < foundDist)
+                        {
+                            foundDist = dist;
+                            found = tile;
+                        }
+                    }
+                }
+                bombTile = found;
+            }
+
+            if (bombTile == null)
+            {
+                for (var index = bombTiles.Count - 1; index >= 0; index--)
+                {
+                    var bomb = bombTiles[index];
+                    if (bomb != null && bomb.gameObject.activeInHierarchy)
+                    {
+                        var bombScreenPos = boardCamera.WorldToScreenPoint(bomb.transform.position);
+                        var threshold = 22f * (Screen.height / 720f);
+                        if (Vector2.Distance(screenPosition, bombScreenPos) < threshold)
+                        {
+                            bombTile = bomb;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (bombTile == null)
+            {
+                return false;
+            }
+
+            DetonateBomb(bombTile);
             return true;
         }
 
@@ -495,25 +567,65 @@ namespace PokoPuzzle.Core
             }
 
             var worldPosition = boardCamera.ScreenToWorldPoint(screenPosition);
-            var hit = Physics2D.OverlapPoint(worldPosition);
-            return hit == null ? null : hit.GetComponent<PokoTile>();
+            var worldPoint = new Vector2(worldPosition.x, worldPosition.y);
+
+            var radius = 0.35f;
+            var hits = Physics2D.OverlapCircleAll(worldPoint, radius);
+            PokoTile closest = null;
+            var minDist = float.MaxValue;
+            for (var index = 0; index < hits.Length; index++)
+            {
+                var tile = hits[index].GetComponent<PokoTile>();
+                if (tile == null || !tile.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                var tilePos = tile.transform.position;
+                var dist = (worldPoint - new Vector2(tilePos.x, tilePos.y)).sqrMagnitude;
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    closest = tile;
+                }
+            }
+
+            return closest;
         }
 
         private void AddSelectedTile(PokoTile tile)
         {
+            if (tile == null || !tile.IsLinkable)
+            {
+                return;
+            }
+
+            PruneSelectedTiles();
             ClearLinkHints();
             selectedTiles.Add(tile);
             tile.SetSelected(true);
             RefreshLine();
             RefreshLinkHints();
+            RefreshChainRewardFeedback();
         }
 
         private void RemoveLastSelectedTile()
         {
+            PruneSelectedTiles();
+            if (selectedTiles.Count == 0)
+            {
+                RefreshLine();
+                return;
+            }
+
             ClearLinkHints();
             var last = selectedTiles[^1];
             selectedTiles.RemoveAt(selectedTiles.Count - 1);
-            last.SetSelected(false);
+            if (last != null)
+            {
+                last.SetSelected(false);
+            }
+
             RefreshLine();
             RefreshLinkHints();
         }
@@ -539,10 +651,10 @@ namespace PokoPuzzle.Core
                         continue;
                     }
 
-                    foreach (var neighborPos in HexGridUtility.GetNeighbors(tile.Column, tile.Row, height))
+                    foreach (var neighborPos in HexGridUtility.GetNeighbors(tile.Column, tile.Row, width, height))
                     {
                         var neighbor = tiles[neighborPos.x, neighborPos.y];
-                        if (neighbor != null && !tilesToDestroy.Contains(neighbor) && !neighbor.IsBomb)
+                        if (neighbor != null && !tilesToDestroy.Contains(neighbor) && neighbor.IsLinkable)
                         {
                             cascadeNeighbors.Add(neighbor);
                         }
@@ -562,42 +674,24 @@ namespace PokoPuzzle.Core
                 var tileColumn = tile.Column;
                 var tileRow = tile.Row;
 
-                if (tile.IsClock)
-                {
-                    timeRemaining += 2f;
-                    specialBlocksClearedCount++;
-                    playLogger?.LogCombatEvent("special_block_clear", 3, 1,
-                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
-                }
-                else if (tile.IsFrozen || tile.IsStone)
-                {
-                    specialBlocksClearedCount++;
-                    playLogger?.LogCombatEvent("special_block_clear", tile.IsFrozen ? 1 : 2, 1,
-                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
-                }
-
                 tiles[tileColumn, tileRow] = null;
                 tile.PlayClearAndDestroy();
 
-                foreach (var frozenPos in HexGridUtility.GetNeighbors(tileColumn, tileRow, height))
+                foreach (var frozenPos in HexGridUtility.GetNeighbors(tileColumn, tileRow, width, height))
                 {
                     var frozenTile = tiles[frozenPos.x, frozenPos.y];
                     if (frozenTile != null && frozenTile.IsFrozen)
                     {
-                        specialBlocksClearedCount++;
-                        tiles[frozenPos.x, frozenPos.y] = null;
-                        frozenTile.PlayClearAndDestroy();
-                        playLogger?.LogCombatEvent("special_block_clear", 1, 1,
-                            comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+                        UnlockFrozenTile(frozenTile);
                     }
                 }
             }
 
-            FillFeverGauge(tilesToDestroy.Count);
+            FillRainbowGauge(tilesToDestroy.Count);
             return gainedScore;
         }
 
-        private void ClearAdjacentFrozenTiles()
+        private void UnlockAdjacentFrozenTiles()
         {
             var changed = true;
             while (changed)
@@ -613,15 +707,11 @@ namespace PokoPuzzle.Core
                             continue;
                         }
 
-                        foreach (var neighborPos in HexGridUtility.GetNeighbors(column, row, height))
+                        foreach (var neighborPos in HexGridUtility.GetNeighbors(column, row, width, height))
                         {
                             if (tiles[neighborPos.x, neighborPos.y] == null)
                             {
-                                specialBlocksClearedCount++;
-                                tiles[column, row] = null;
-                                tile.PlayClearAndDestroy();
-                                playLogger?.LogCombatEvent("special_block_clear", 1, 1,
-                                    comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+                                UnlockFrozenTile(tile);
                                 changed = true;
                                 break;
                             }
@@ -631,54 +721,97 @@ namespace PokoPuzzle.Core
             }
         }
 
-        private void TryPlaceBomb(int chainLength)
+        private void UnlockFrozenTile(PokoTile tile)
         {
+            if (tile == null || !tile.IsFrozen)
+            {
+                return;
+            }
+
+            tile.ConfigureSubtype(PokoBlockSubtype.None);
+            playLogger?.LogCombatEvent("special_block_unlock", 1, 1,
+                comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+        }
+
+        private bool TryPlaceBomb(int chainLength, Vector2Int? preferredPosition, PokoTileType chainTileType, out BombType bombType)
+        {
+            bombType = BombType.Red;
             if (chainLength < 7)
             {
-                return;
+                return false;
             }
 
-            var emptyPositions = new List<Vector2Int>();
-            for (var column = 0; column < width; column++)
+            Vector2Int pos;
+            if (preferredPosition.HasValue && IsInsideBoard(preferredPosition.Value.x, preferredPosition.Value.y)
+                && tiles[preferredPosition.Value.x, preferredPosition.Value.y] == null)
             {
-                for (var row = 0; row < height; row++)
+                pos = preferredPosition.Value;
+            }
+            else
+            {
+                var emptyPositions = new List<Vector2Int>();
+                for (var column = 0; column < width; column++)
                 {
-                    if (IsInsideBoard(column, row) && tiles[column, row] == null)
+                    for (var row = 0; row < height; row++)
                     {
-                        emptyPositions.Add(new Vector2Int(column, row));
+                        if (IsInsideBoard(column, row) && tiles[column, row] == null)
+                        {
+                            emptyPositions.Add(new Vector2Int(column, row));
+                        }
                     }
                 }
+
+                if (emptyPositions.Count == 0)
+                {
+                    return false;
+                }
+
+                pos = emptyPositions[Random.Range(0, emptyPositions.Count)];
             }
 
-            if (emptyPositions.Count == 0)
-            {
-                return;
-            }
-
-            var pos = emptyPositions[Random.Range(0, emptyPositions.Count)];
-            var bombTile = CreateTile(pos.x, pos.y, PokoTileType.Red);
-            var bt = chainLength >= 12 ? BombType.Rainbow : chainLength >= 10 ? BombType.Blue : BombType.Red;
+            var bombTile = CreateTile(pos.x, pos.y, chainTileType);
+            var bt = chainLength >= 10 ? BombType.Blue : BombType.Red;
+            bombType = bt;
             bombTile.ConfigureBomb(bt);
             tiles[pos.x, pos.y] = bombTile;
             bombTiles.Add(bombTile);
             playLogger?.LogCombatEvent("bomb_placed", bt == BombType.Rainbow ? 3 : bt == BombType.Blue ? 2 : 1, chainLength,
                 comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+            return true;
         }
 
-        private void FillFeverGauge(int blocksCleared)
+        private void FillRainbowGauge(int blocksCleared)
         {
-            if (feverActive)
-            {
-                return;
-            }
-
             var gaugeMultiplier = activeBalanceProfile != null
                 ? Mathf.Max(0f, activeBalanceProfile.FeverGaugeMultiplier)
                 : 1f;
-            feverGauge += blocksCleared * FeverGaugeFillPerBlock * gaugeMultiplier;
-            if (feverGauge >= FeverGaugeMax)
+            rainbowGauge += blocksCleared * RainbowGaugeFillPerBlock * gaugeMultiplier;
+            if (rainbowGauge >= RainbowGaugeMax)
             {
-                TryStartFever(true);
+                rainbowGauge = 0f;
+                SpawnRainbowBomb();
+            }
+        }
+
+        private void SpawnRainbowBomb()
+        {
+            for (var column = 0; column < width; column++)
+            {
+                for (var row = 0; row < height; row++)
+                {
+                    if (!IsInsideBoard(column, row) || tiles[column, row] != null)
+                    {
+                        continue;
+                    }
+
+                    var bombTile = CreateTile(column, row, PokoTileType.Red);
+                    bombTile.ConfigureBomb(BombType.Rainbow);
+                    tiles[column, row] = bombTile;
+                    bombTiles.Add(bombTile);
+                    hudRenderer.ShowFeedback("Rainbow Bomb Charged!", new Color(0.8f, 0.4f, 1f), 2f);
+                    effectRenderer?.PlayBossSpawn("Rainbow");
+                    return;
+                }
             }
         }
 
@@ -696,6 +829,7 @@ namespace PokoPuzzle.Core
                 if (bomb.TickBombTimer(Time.deltaTime))
                 {
                     DetonateBomb(bomb);
+                    return;
                 }
             }
         }
@@ -710,6 +844,7 @@ namespace PokoPuzzle.Core
             var column = bombTile.Column;
             var row = bombTile.Row;
             var bombType = bombTile.BombType;
+            var bombPosition = bombTile.transform.position;
 
             bombTiles.Remove(bombTile);
             tiles[column, row] = null;
@@ -717,11 +852,19 @@ namespace PokoPuzzle.Core
 
             if (bombType == BombType.Rainbow)
             {
-                DetonateRainbowBomb();
+                DetonateRainbowBomb(bombPosition);
                 return;
             }
 
-            var affected = new List<Vector2Int>(BoardBomb.GetAffectedPositions(column, row, height, bombType));
+            StartCoroutine(ResolveBombClear(column, row, bombType, bombPosition));
+        }
+
+        private IEnumerator ResolveBombClear(int column, int row, BombType bombType, Vector3 bombPosition)
+        {
+            resolvingVisualEffect = true;
+            var affected = new List<Vector2Int>(BoardBomb.GetAffectedPositions(column, row, width, height, bombType));
+            var targets = new List<PokoTile>();
+            var targetPositions = new List<Vector3>();
             foreach (var pos in affected)
             {
                 var tile = tiles[pos.x, pos.y];
@@ -730,32 +873,69 @@ namespace PokoPuzzle.Core
                     continue;
                 }
 
-                if (tile.IsClock)
+                if (tile.IsFrozen)
                 {
-                    timeRemaining += 2f;
+                    UnlockFrozenTile(tile);
+                    continue;
                 }
 
-                if (tile.IsStone || tile.IsFrozen || tile.IsClock)
+                if (!tile.IsLinkable)
                 {
-                    specialBlocksClearedCount++;
-                    var subtype = tile.IsClock ? 3 : tile.IsFrozen ? 1 : 2;
-                    playLogger?.LogCombatEvent("special_block_clear", subtype, 1,
-                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+                    continue;
+                }
+
+                targets.Add(tile);
+                targetPositions.Add(tile.transform.position);
+            }
+
+            var estimatedScore = targets.Count * 50;
+            effectRenderer?.PlayBombPull(bombPosition, targetPositions, bombType, estimatedScore);
+            if (bombType == BombType.Blue)
+            {
+                for (var index = 0; index < targets.Count; index++)
+                {
+                    targets[index]?.PlayPullToward(bombPosition, 0.38f, index * 0.01f);
+                }
+            }
+            else if (bombType == BombType.Red)
+            {
+                for (var index = 0; index < targets.Count; index++)
+                {
+                    var distance = Vector3.Distance(targets[index].transform.position, bombPosition);
+                    targets[index]?.PlayBlastAwayFrom(bombPosition, 0.26f, Mathf.Min(0.12f, distance * 0.025f));
+                }
+            }
+
+            yield return new WaitForSeconds(bombType == BombType.Blue ? 0.46f : 0.38f);
+
+            var clearedCount = 0;
+            foreach (var tile in targets)
+            {
+                if (tile == null || !IsInside(tile.Column, tile.Row) || tiles[tile.Column, tile.Row] != tile || !tile.IsLinkable)
+                {
+                    continue;
                 }
 
                 bombsClearedCount++;
+                clearedCount++;
                 score += 50;
-                tiles[pos.x, pos.y] = null;
+                tiles[tile.Column, tile.Row] = null;
                 tile.PlayClearAndDestroy();
             }
 
-            ClearAdjacentFrozenTiles();
+            UnlockAdjacentFrozenTiles();
+            FillRainbowGauge(clearedCount);
             CollapseAndRefill();
-            playLogger?.LogCombatEvent("bomb_detonate", bombType == BombType.Red ? 1 : 2, affected.Count,
+            hudRenderer.ShowFeedback($"{bombType} Bomb! +{clearedCount * 50}", bombType == BombType.Blue ? new Color(0.22f, 0.62f, 1f) : new Color(1f, 0.35f, 0.18f), 1.6f);
+            playLogger?.LogCombatEvent("bomb_detonate", bombType == BombType.Red ? 1 : 2, clearedCount,
                 comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+            hudRenderer?.RefreshHud(score, enemySpawnIndex, Mathf.CeilToInt(timeRemaining));
+            RunDesignerAgent();
+            EvaluateEndState();
+            resolvingVisualEffect = false;
         }
 
-        private void DetonateRainbowBomb()
+        private void DetonateRainbowBomb(Vector3 bombPosition)
         {
             var typeCounts = new int[6];
 
@@ -788,10 +968,10 @@ namespace PokoPuzzle.Core
                 return;
             }
 
-            StartCoroutine(ResolveRainbowClear(targetType));
+            StartCoroutine(ResolveRainbowClear(targetType, bombPosition));
         }
 
-        private IEnumerator ResolveRainbowClear(PokoTileType targetType)
+        private IEnumerator ResolveRainbowClear(PokoTileType targetType, Vector3 bombPosition)
         {
             resolvingVisualEffect = true;
             var clearedPositions = new List<Vector3>();
@@ -809,8 +989,16 @@ namespace PokoPuzzle.Core
                 }
             }
 
+            var estimatedScore = targets.Count * 50;
             effectRenderer?.PlayRainbowPreview(clearedPositions, AveragePosition(clearedPositions));
-            yield return new WaitForSeconds(0.12f);
+            effectRenderer?.PlayRainbowDetonation(bombPosition, clearedPositions, targetType, estimatedScore);
+            var targetColor = targetType.ToColor();
+            for (var index = 0; index < targets.Count; index++)
+            {
+                targets[index]?.PlayRainbowTargetPulse(targetColor, 0.5f, index * 0.004f);
+            }
+
+            yield return new WaitForSeconds(0.56f);
 
             var totalRemoved = 0;
             foreach (var tile in targets)
@@ -818,14 +1006,6 @@ namespace PokoPuzzle.Core
                 if (tile == null || !IsInside(tile.Column, tile.Row) || tiles[tile.Column, tile.Row] != tile)
                 {
                     continue;
-                }
-
-                if (tile.IsClock)
-                {
-                    timeRemaining += 2f;
-                    specialBlocksClearedCount++;
-                    playLogger?.LogCombatEvent("special_block_clear", 3, 1,
-                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
                 }
 
                 tiles[tile.Column, tile.Row] = null;
@@ -840,9 +1020,9 @@ namespace PokoPuzzle.Core
             hudRenderer.ShowFeedback($"Rainbow! Cleared all {targetType} (+{gainedScore})", new Color(0.8f, 0.4f, 1f), 2.5f);
             effectRenderer?.PlayRainbowClear(clearedPositions, AveragePosition(clearedPositions), gainedScore);
 
-            ClearAdjacentFrozenTiles();
+            UnlockAdjacentFrozenTiles();
             CollapseAndRefill();
-            playLogger?.LogCombatEvent("rainbow_cleared", 1, gainedScore,
+            playLogger?.LogCombatEvent("rainbow_cleared", totalRemoved, gainedScore,
                 comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
             hudRenderer?.RefreshHud(score, enemySpawnIndex, Mathf.CeilToInt(timeRemaining));
             RunDesignerAgent();
@@ -975,6 +1155,19 @@ namespace PokoPuzzle.Core
 
         private void CollapseAndRefill()
         {
+            CompactColumns(false);
+
+            while (ClearBottomStones())
+            {
+                CompactColumns(false);
+            }
+
+            CompactColumns(true);
+            EnsurePlayableChain();
+        }
+
+        private void CompactColumns(bool refill)
+        {
             for (var column = 0; column < width; column++)
             {
                 var validRows = GetValidRowsInColumn(column);
@@ -988,25 +1181,72 @@ namespace PokoPuzzle.Core
                         continue;
                     }
 
+                    if (tile.IsBomb)
+                    {
+                        continue;
+                    }
+
                     var writeRow = validRows[writeIndex];
+                    if (tiles[column, writeRow] != null && tiles[column, writeRow].IsBomb)
+                    {
+                        writeIndex++;
+                        if (writeIndex >= validRows.Count)
+                        {
+                            break;
+                        }
+                        writeRow = validRows[writeIndex];
+                    }
                     tiles[column, writeRow] = tile;
-                    tile.SetGridPosition(column, writeRow, GridToWorld(column, writeRow));
+                    var targetPos = GridToWorld(column, writeRow);
 
                     if (writeRow != row)
                     {
+                        tile.SetGridPosition(column, writeRow, targetPos);
+                        var dropHeight = (row - writeRow) * spacing * HexGridUtility.VerticalSpacingRatio;
+                        tile.AnimateDrop(targetPos, dropHeight, 0f);
                         tiles[column, row] = null;
+                    }
+                    else
+                    {
+                        tile.SetGridPosition(column, writeRow, targetPos);
                     }
 
                     writeIndex++;
                 }
 
+                if (!refill)
+                {
+                    for (var index = writeIndex; index < validRows.Count; index++)
+                    {
+                        var clearRow = validRows[index];
+                        if (tiles[column, clearRow] != null && tiles[column, clearRow].IsBomb)
+                        {
+                            continue;
+                        }
+                        tiles[column, clearRow] = null;
+                    }
+
+                    continue;
+                }
+
                 for (var index = writeIndex; index < validRows.Count; index++)
                 {
                     var row = validRows[index];
-                    tiles[column, row] = CreateTile(column, row, RandomType());
+                    if (tiles[column, row] != null && tiles[column, row].IsBomb)
+                    {
+                        continue;
+                    }
+                    var dropTile = CreateTile(column, row, RandomType());
+                    tiles[column, row] = dropTile;
+                    var dropHeight = (height - row) * spacing * HexGridUtility.VerticalSpacingRatio * 0.3f;
+                    dropTile.AnimateDrop(GridToWorld(column, row), Mathf.Max(0.3f, dropHeight), index * 0.015f);
                 }
             }
+        }
 
+        private bool ClearBottomStones()
+        {
+            var clearedAny = false;
             for (var column = 0; column < width; column++)
             {
                 var bottom = tiles[column, 0];
@@ -1014,13 +1254,15 @@ namespace PokoPuzzle.Core
                 {
                     tiles[column, 0] = null;
                     bottom.PlayClearAndDestroy();
+                    score += 30;
                     specialBlocksClearedCount++;
                     playLogger?.LogCombatEvent("special_block_clear", 2, 1,
                         comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+                    clearedAny = true;
                 }
             }
 
-            EnsurePlayableChain();
+            return clearedAny;
         }
 
         private List<int> GetValidRowsInColumn(int column)
@@ -1039,6 +1281,7 @@ namespace PokoPuzzle.Core
 
         private void ClearSelection()
         {
+            PruneSelectedTiles();
             ClearLinkHints();
 
             foreach (var tile in selectedTiles)
@@ -1055,6 +1298,7 @@ namespace PokoPuzzle.Core
 
         private void RefreshLinkHints()
         {
+            PruneSelectedTiles();
             if (selectedTiles.Count == 0)
             {
                 return;
@@ -1066,7 +1310,7 @@ namespace PokoPuzzle.Core
                 return;
             }
 
-            foreach (var next in HexGridUtility.GetNeighbors(last.Column, last.Row, height))
+            foreach (var next in HexGridUtility.GetNeighbors(last.Column, last.Row, width, height))
             {
                 var candidate = tiles[next.x, next.y];
                 if (candidate == null || !candidate.IsLinkable || !CanLinkTiles(last, candidate) || selectedTiles.Contains(candidate))
@@ -1079,13 +1323,30 @@ namespace PokoPuzzle.Core
             }
         }
 
+        private void RefreshChainRewardFeedback()
+        {
+            if (selectedTiles.Count >= 10)
+            {
+                hudRenderer.ShowFeedback("Blue Bomb Ready", new Color(0.35f, 0.65f, 1f), 0.7f);
+            }
+            else if (selectedTiles.Count >= 7)
+            {
+                hudRenderer.ShowFeedback("Red Bomb Ready", new Color(1f, 0.42f, 0.18f), 0.7f);
+            }
+        }
+
         private void ClearLinkHints()
         {
-            foreach (var tile in hintedTiles)
+            for (var index = hintedTiles.Count - 1; index >= 0; index--)
             {
+                var tile = hintedTiles[index];
                 if (tile != null)
                 {
                     tile.SetLinkHint(false);
+                }
+                else
+                {
+                    hintedTiles.RemoveAt(index);
                 }
             }
 
@@ -1099,6 +1360,7 @@ namespace PokoPuzzle.Core
                 return;
             }
 
+            PruneSelectedTiles();
             var activeColor = feverActive ? new Color(1f, 0.55f, 0.08f) : Color.white;
             var lineWidth = selectedTiles.Count >= 3 ? 0.15f : 0.11f;
             linkLine.startColor = activeColor;
@@ -1108,7 +1370,23 @@ namespace PokoPuzzle.Core
             linkLine.positionCount = selectedTiles.Count;
             for (var index = 0; index < selectedTiles.Count; index++)
             {
-                linkLine.SetPosition(index, selectedTiles[index].transform.position + Vector3.back * 0.1f);
+                var tile = selectedTiles[index];
+                if (tile != null)
+                {
+                    linkLine.SetPosition(index, tile.transform.position + Vector3.back * 0.1f);
+                }
+            }
+        }
+
+        private void PruneSelectedTiles()
+        {
+            for (var index = selectedTiles.Count - 1; index >= 0; index--)
+            {
+                var tile = selectedTiles[index];
+                if (tile == null || !tile.IsLinkable)
+                {
+                    selectedTiles.RemoveAt(index);
+                }
             }
         }
 
@@ -1122,7 +1400,7 @@ namespace PokoPuzzle.Core
 
             foreach (var tile in source)
             {
-                if (tile != null)
+                if (tile != null && tile.IsLinkable)
                 {
                     positions.Add(tile.transform.position);
                 }
@@ -1226,7 +1504,7 @@ namespace PokoPuzzle.Core
                 var current = stack.Pop();
                 count++;
 
-                foreach (var next in HexGridUtility.GetNeighbors(current.x, current.y, height))
+                foreach (var next in HexGridUtility.GetNeighbors(current.x, current.y, width, height))
                 {
                     if (visited[next.x, next.y])
                     {
@@ -1257,7 +1535,7 @@ namespace PokoPuzzle.Core
 
             var count = 0;
 
-            foreach (var next in HexGridUtility.GetNeighbors(column, row, height))
+            foreach (var next in HexGridUtility.GetNeighbors(column, row, width, height))
             {
                 var nextTile = tiles[next.x, next.y];
                 if (nextTile != null && nextTile.IsLinkable && CanLinkTiles(tile, nextTile))
@@ -1271,7 +1549,17 @@ namespace PokoPuzzle.Core
 
         private void EnsurePlayableChain()
         {
-            if (FindLongestChain() >= 3 || !TryFindThreeTilePath(out var first, out var second, out var third))
+            if (FindLongestChain() >= 7 || (TryCreateChain(7) && FindLongestChain() >= 7))
+            {
+                return;
+            }
+
+            if (FindLongestChain() >= 3)
+            {
+                return;
+            }
+
+            if (!TryFindThreeTilePath(out var first, out var second, out var third))
             {
                 return;
             }
@@ -1279,6 +1567,80 @@ namespace PokoPuzzle.Core
             var assistedType = first.Type;
             second.SetTypeWithSprite(assistedType, tileSprites[(int)assistedType]);
             third.SetTypeWithSprite(assistedType, tileSprites[(int)assistedType]);
+        }
+
+        private bool TryCreateChain(int targetLength)
+        {
+            var needed = targetLength - 1;
+
+            for (var column = 0; column < width; column++)
+            {
+                for (var row = 0; row < height; row++)
+                {
+                    if (!IsInsideBoard(column, row))
+                    {
+                        continue;
+                    }
+
+                    var center = tiles[column, row];
+                    if (center == null || !center.IsLinkable || center.IsBomb)
+                    {
+                        continue;
+                    }
+
+                    var visited = new bool[width, height];
+                    var queue = new Queue<(Vector2Int Pos, int Dist)>();
+                    queue.Enqueue((new Vector2Int(column, row), 0));
+                    visited[column, row] = true;
+                    var candidates = new List<PokoTile>();
+
+                    while (queue.Count > 0)
+                    {
+                        var current = queue.Dequeue();
+
+                        if (current.Dist > 0)
+                        {
+                            var tile = tiles[current.Pos.x, current.Pos.y];
+                            if (tile != null && tile.IsLinkable && !tile.IsBomb)
+                            {
+                                candidates.Add(tile);
+                            }
+                        }
+
+                        if (current.Dist >= 2)
+                        {
+                            continue;
+                        }
+
+                        foreach (var neighbor in HexGridUtility.GetNeighbors(current.Pos.x, current.Pos.y, width, height))
+                        {
+                            if (!visited[neighbor.x, neighbor.y])
+                            {
+                                visited[neighbor.x, neighbor.y] = true;
+                                queue.Enqueue((neighbor, current.Dist + 1));
+                            }
+                        }
+                    }
+
+                    if (candidates.Count < needed)
+                    {
+                        continue;
+                    }
+
+                    var targetType = center.Type;
+                    for (var index = 0; index < needed; index++)
+                    {
+                        candidates[index].SetTypeWithSprite(targetType, tileSprites[(int)targetType]);
+                    }
+
+                    if (EstimateFloodSize(column, row) >= targetLength)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private bool TryFindThreeTilePath(out PokoTile first, out PokoTile second, out PokoTile third)
@@ -1298,7 +1660,7 @@ namespace PokoPuzzle.Core
                         continue;
                     }
 
-                    foreach (var secondPosition in HexGridUtility.GetNeighbors(column, row, height))
+                    foreach (var secondPosition in HexGridUtility.GetNeighbors(column, row, width, height))
                     {
                         second = tiles[secondPosition.x, secondPosition.y];
                         if (second == null || !second.IsLinkable || !CanLinkTiles(first, second))
@@ -1306,7 +1668,7 @@ namespace PokoPuzzle.Core
                             continue;
                         }
 
-                        foreach (var thirdPosition in HexGridUtility.GetNeighbors(secondPosition.x, secondPosition.y, height))
+                        foreach (var thirdPosition in HexGridUtility.GetNeighbors(secondPosition.x, secondPosition.y, width, height))
                         {
                             if (thirdPosition.x == column && thirdPosition.y == row)
                             {
@@ -1351,7 +1713,7 @@ namespace PokoPuzzle.Core
                 return false;
             }
 
-            var maxCol = useHexGrid ? HexGridUtility.RowSize(row) : width;
+            var maxCol = useHexGrid ? HexGridUtility.RowSize(row, width) : width;
             return column < maxCol;
         }
 
@@ -1371,7 +1733,7 @@ namespace PokoPuzzle.Core
             var boardHalfWidth = Mathf.Max(1f, width * spacing * 0.5f);
             var verticalSize = boardHalfHeight + 2.25f;
             var horizontalSize = boardHalfWidth / Mathf.Max(0.5f, boardCamera.aspect) + 1.5f;
-            boardCamera.orthographicSize = Mathf.Max(boardCamera.orthographicSize, 6.6f, verticalSize, horizontalSize);
+            boardCamera.orthographicSize = Mathf.Max(boardCamera.orthographicSize, 5f, verticalSize, horizontalSize);
 
             var cameraPosition = boardCamera.transform.position;
             boardCamera.transform.position = new Vector3(cameraPosition.x, 0.72f, cameraPosition.z);
@@ -1444,22 +1806,6 @@ namespace PokoPuzzle.Core
             }
 
             return (PokoTileType)(maxTypes - 1);
-        }
-
-        private static PokoBlockSubtype RandomSubtype(float probability)
-        {
-            if (Random.value > probability)
-            {
-                return PokoBlockSubtype.None;
-            }
-
-            var roll = Random.Range(0, 3);
-            return roll switch
-            {
-                0 => PokoBlockSubtype.Frozen,
-                1 => PokoBlockSubtype.Stone,
-                _ => PokoBlockSubtype.Clock
-            };
         }
 
         private void ApplyLevelConfig()
@@ -1649,11 +1995,10 @@ namespace PokoPuzzle.Core
             if (timeRemaining <= 0f)
             {
                 gameEnded = true;
-                var result = score >= targetScore ? "clear" : "time_up";
-                var feedback = score >= targetScore ? $"TARGET CLEAR - Score: {score}" : $"TIME UP - Score: {score}";
-                var color = score >= targetScore ? new Color(0.40f, 1f, 0.55f) : new Color(1f, 0.7f, 0.2f);
+                var feedback = $"TIME UP - Score: {score}";
+                var color = new Color(1f, 0.7f, 0.2f);
                 hudRenderer.ShowFeedback(feedback, color, 4f);
-                playLogger?.LogEndState(result, score, movesUsed, Mathf.CeilToInt(timeRemaining),
+                playLogger?.LogEndState("time_up", score, movesUsed, Mathf.CeilToInt(timeRemaining),
                     enemySpawnIndex, targetScore, moveLimit);
             }
         }
@@ -1685,7 +2030,7 @@ namespace PokoPuzzle.Core
             specialBlocksClearedCount = 0;
             rainbowClearedCount = 0;
             rainbowTapsCount = 0;
-            feverGauge = 0f;
+            rainbowGauge = 0f;
             bombTiles.Clear();
             enemySpawnIndex = 0;
             regularSpawnCount = 0;
@@ -1723,8 +2068,8 @@ namespace PokoPuzzle.Core
         private void OnGUI()
         {
             hudRenderer?.OnGUI(score, Mathf.CeilToInt(timeRemaining), comboCount, feverActive,
-                Mathf.CeilToInt(feverTimer), agentHudText, gameEnded, targetScore,
-                enemy, enemySpawnIndex, feverGauge, FeverGaugeMax);
+                Mathf.CeilToInt(feverTimer), gameEnded, roundTime,
+                enemy, enemySpawnIndex, rainbowGauge, RainbowGaugeMax);
         }
 
         private PlayLogger CreatePlayLogger()

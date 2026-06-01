@@ -127,7 +127,7 @@ namespace PokoPuzzle.Editor
 
         private static string ExperimentAssetPath(string experimentId, string variant)
         {
-            return $"Assets/PokoPuzzle/Data/Experiments/{experimentId}/{variant}.asset";
+            return $"Assets/PokoPuzzle/Data/Generated/Experiments/{experimentId}_{variant}.asset";
         }
     }
 }

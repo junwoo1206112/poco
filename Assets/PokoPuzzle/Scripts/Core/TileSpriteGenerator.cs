@@ -21,7 +21,65 @@ namespace PokoPuzzle.Core
             const int size = 96;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             var center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
-            var outerRadius = size * 0.42f;
+
+            if (visualStyle == PokoTileVisualStyle.CircleInHex)
+            {
+                FillCircleStyle(texture, size, center, type);
+            }
+            else
+            {
+                FillHexStyle(texture, size, center, type);
+            }
+
+            texture.Apply();
+            return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+
+        private static void FillCircleStyle(Texture2D texture, int size, Vector2 center, PokoTileType type)
+        {
+            var outerRadius = size * 0.44f;
+            var innerRadius = size * 0.35f;
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var point = new Vector2(x, y);
+                    var dist = Vector2.Distance(point, center);
+
+                    if (dist > outerRadius)
+                    {
+                        texture.SetPixel(x, y, new Color(0f, 0f, 0f, 0f));
+                        continue;
+                    }
+
+                    var highlight = Mathf.Clamp01((point.y - center.y + size * 0.28f) / (size * 0.56f));
+
+                    if (dist > innerRadius)
+                    {
+                        var ringT = (dist - innerRadius) / (outerRadius - innerRadius);
+                        var ringBright = Mathf.Lerp(1f, 0.15f, ringT);
+                        texture.SetPixel(x, y, new Color(ringBright, ringBright, ringBright, 1f));
+                    }
+                    else
+                    {
+                        var inShape = IsInsideShape(point, center, size, type);
+                        var faceBright = inShape ? Mathf.Lerp(0.85f, 1f, highlight) : Mathf.Lerp(0.45f, 0.65f, highlight);
+                        var rim = dist > innerRadius - 3f;
+                        if (rim)
+                        {
+                            faceBright *= 0.5f;
+                        }
+
+                        texture.SetPixel(x, y, new Color(faceBright, faceBright, faceBright, 1f));
+                    }
+                }
+            }
+        }
+
+        private static void FillHexStyle(Texture2D texture, int size, Vector2 center, PokoTileType type)
+        {
+            var outerRadius = size * 0.44f;
             var innerRadius = size * 0.34f;
             var outer = new Vector2[6];
             var inner = new Vector2[6];
@@ -34,6 +92,8 @@ namespace PokoPuzzle.Core
                 outer[index] = new Vector2(center.x + outerRadius * cos, center.y + outerRadius * sin);
                 inner[index] = new Vector2(center.x + innerRadius * cos, center.y + innerRadius * sin);
             }
+
+            var baseColor = TileColor(type);
 
             for (var y = 0; y < size; y++)
             {
@@ -51,18 +111,43 @@ namespace PokoPuzzle.Core
 
                     if (!inInner)
                     {
-                        texture.SetPixel(x, y, new Color(0.35f, 0.35f, 0.35f, 1f));
+                        var outerEdge = DistanceToHexEdge(point, outer) < 2f;
+                        var innerEdge = DistanceToHexEdge(point, inner) < 2f;
+                        if (outerEdge || innerEdge)
+                        {
+                            texture.SetPixel(x, y, new Color(1f, 1f, 1f, 1f));
+                        }
+                        else
+                        {
+                            texture.SetPixel(x, y, new Color(0.92f, 0.92f, 0.92f, 1f));
+                        }
                         continue;
                     }
 
                     var inShape = IsInsideShape(point, center, size, type);
-                    var gray = inShape ? 0.95f : 0.50f;
-                    texture.SetPixel(x, y, new Color(gray, gray, gray, 1f));
+                    var highlight = Mathf.Clamp01((point.y - center.y + size * 0.24f) / (size * 0.48f));
+                    var faceBright = inShape ? Mathf.Lerp(0.85f, 1f, highlight) : Mathf.Lerp(0.45f, 0.6f, highlight);
+                    var innerColor = new Color(
+                        baseColor.r * faceBright,
+                        baseColor.g * faceBright,
+                        baseColor.b * faceBright, 1f);
+                    texture.SetPixel(x, y, innerColor);
                 }
             }
+        }
 
-            texture.Apply();
-            return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        private static Color TileColor(PokoTileType type)
+        {
+            return type switch
+            {
+                PokoTileType.Red => new Color(0.95f, 0.22f, 0.28f),
+                PokoTileType.Yellow => new Color(1f, 0.78f, 0.2f),
+                PokoTileType.Green => new Color(0.28f, 0.76f, 0.36f),
+                PokoTileType.Blue => new Color(0.22f, 0.55f, 0.95f),
+                PokoTileType.Purple => new Color(0.58f, 0.34f, 0.9f),
+                PokoTileType.Orange => new Color(1f, 0.52f, 0.18f),
+                _ => Color.white
+            };
         }
 
         private static bool IsInsideShape(Vector2 point, Vector2 center, int size, PokoTileType type)
@@ -162,6 +247,26 @@ namespace PokoPuzzle.Core
             }
 
             return true;
+        }
+
+        private static float DistanceToHexEdge(Vector2 point, Vector2[] vertices)
+        {
+            var minDistance = float.MaxValue;
+            for (var index = 0; index < 6; index++)
+            {
+                var next = (index + 1) % 6;
+                minDistance = Mathf.Min(minDistance, DistanceToSegment(point, vertices[index], vertices[next]));
+            }
+
+            return minDistance;
+        }
+
+        private static float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b)
+        {
+            var segment = b - a;
+            var t = Vector2.Dot(point - a, segment) / Mathf.Max(0.0001f, Vector2.Dot(segment, segment));
+            t = Mathf.Clamp01(t);
+            return Vector2.Distance(point, a + segment * t);
         }
     }
 }

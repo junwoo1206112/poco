@@ -28,7 +28,7 @@ namespace PokoPuzzle.Editor
         public bool UseHexGrid { get; }
         public PokoTileVisualStyle TileVisualStyle { get; }
 
-        public static PokoPrototypeSceneSettings Default => new("Assets/Scenes/PokoPrototype.unity", 4, 13, 6, 0.74f, true, PokoTileVisualStyle.CircleInHex);
+        public static PokoPrototypeSceneSettings Default => new("Assets/Scenes/PokoPrototype.unity", 4, 9, 5, 0.85f, true, PokoTileVisualStyle.Hex);
     }
 
     public static class PokoPrototypeSceneBuilder
@@ -47,7 +47,7 @@ namespace PokoPuzzle.Editor
             cameraObject.transform.position = new Vector3(0f, 0.72f, -10f);
             var camera = cameraObject.AddComponent<Camera>();
             camera.orthographic = true;
-            camera.orthographicSize = 6.6f;
+            camera.orthographicSize = 5f;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.08f, 0.10f, 0.14f);
             cameraObject.tag = "MainCamera";

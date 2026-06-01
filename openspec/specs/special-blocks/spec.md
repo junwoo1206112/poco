@@ -22,6 +22,7 @@ The system SHALL support Frozen, Stone, and Clock block subtypes that appear on 
 
 - **WHEN** a Clock block is cleared (by chain or bomb)
 - **THEN** 2 seconds are added to the remaining round time
+- **AND** the clear is presented as a visible `TIME +2s` bonus
 
 #### Scenario: Special subtype is created
 
@@ -50,4 +51,4 @@ Each special block subtype SHALL have a distinct visual appearance so the player
 #### Scenario: Player sees a Clock block
 
 - **WHEN** a Clock block is on the board
-- **THEN** it renders with a green-tinted fill and clock icon
+- **THEN** it renders with a gold-tinted fill and clock-plus icon

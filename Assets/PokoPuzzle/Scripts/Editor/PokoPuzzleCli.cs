@@ -367,10 +367,12 @@ namespace PokoPuzzle.Editor
         {
             var args = CliArgs.Parse(Environment.GetCommandLineArgs());
             var inputPath = args.GetString("inputPath", "md/agent-reports/latest-playtest-analysis.json");
-            var model = args.GetString("model", "gpt-5.4-mini");
+            var model = args.GetString("model", "gpt-4o-mini");
             var requestPath = args.GetString("requestPath", "md/llm-reports/latest-designer-request.json");
             var reportPath = args.GetString("reportPath", "md/llm-reports/latest-designer-review.md");
             var rawResponsePath = args.GetString("rawResponsePath", "md/llm-reports/latest-designer-response.json");
+            var baseUrl = args.GetString("baseUrl", Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com");
+            baseUrl = baseUrl.TrimEnd('/');
 
             if (!File.Exists(inputPath))
             {
@@ -392,7 +394,8 @@ namespace PokoPuzzle.Editor
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-            var response = client.PostAsync("https://api.openai.com/v1/responses", content).GetAwaiter().GetResult();
+            var url = $"{baseUrl}/v1/responses";
+            var response = client.PostAsync(url, content).GetAwaiter().GetResult();
             var responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             WriteReport(rawResponsePath, responseBody);
 
@@ -405,10 +408,83 @@ namespace PokoPuzzle.Editor
             Debug.Log($"Poko CLI saved LLM designer review: {reportPath}");
         }
 
+        public static void CompareAgentStrategies()
+        {
+            var args = CliArgs.Parse(Environment.GetCommandLineArgs());
+            var logPath = args.GetString("logPath", "md/playtest-logs/latest-playtest.jsonl");
+            var reportPath = args.GetString("reportPath", "md/agent-reports/agent-strategy-comparison.md");
+
+            if (!File.Exists(logPath))
+            {
+                Fail($"No play log found at {logPath}. Play the prototype first.");
+            }
+
+            var analysis = PlayLogAnalysis.FromFile(logPath);
+            var telemetry = TelemetryFromAnalysis(analysis);
+            var heuristicResult = new HeuristicGameDesignerAgent().Analyze(telemetry);
+            var llmResult = new LLMGameDesignerAgent().Analyze(telemetry);
+
+            var body =
+                "# AI Game Designer Strategy Comparison\n\n" +
+                "## Input Telemetry\n\n" +
+                $"- Board: `{analysis.Width}x{analysis.Height}`, Tile types: `{analysis.TileTypes}`\n" +
+                $"- Score: `{analysis.FinalScore}`, Moves: `{analysis.MovesUsed}`, Valid: `{analysis.ValidMoves}`, Invalid: `{analysis.InvalidMoves}`\n" +
+                $"- Avg chain: `{analysis.AverageChainLength:F2}`, Max combo: `{analysis.MaxCombo}`, Fever triggers: `{analysis.FeverTriggers}`\n" +
+                $"- Damage dealt: `{analysis.TotalDamageDealt}`, Bombs: `{analysis.BombsGenerated}`, Rainbow: `{analysis.RainbowCleared}`\n\n" +
+                "## Heuristic Agent Result\n\n" +
+                $"- **Difficulty**: `{heuristicResult.DifficultyLabel}`\n" +
+                $"- **Summary**: {heuristicResult.Summary}\n" +
+                $"- **Design Intent**: {heuristicResult.DesignIntent}\n" +
+                $"- **Risk**: {heuristicResult.Risk}\n" +
+                $"- **Recommended Action**: {heuristicResult.RecommendedAction}\n" +
+                $"- Suggested move limit: `{heuristicResult.SuggestedMoveLimit}`, target score: `{heuristicResult.SuggestedTargetScore}`, tile types: `{heuristicResult.SuggestedTileTypes}`\n\n" +
+                "## LLM Agent Result\n\n" +
+                $"- **Difficulty**: `{llmResult.DifficultyLabel}`\n" +
+                $"- **Summary**: {llmResult.Summary}\n" +
+                $"- **Design Intent**: {llmResult.DesignIntent}\n" +
+                $"- **Risk**: {llmResult.Risk}\n" +
+                $"- **Recommended Action**: {llmResult.RecommendedAction}\n" +
+                $"- Suggested move limit: `{llmResult.SuggestedMoveLimit}`, target score: `{llmResult.SuggestedTargetScore}`, tile types: `{llmResult.SuggestedTileTypes}`\n\n" +
+                "## Comparison\n\n" +
+                $"| Dimension | Heuristic | LLM |\n" +
+                $"|---|---|---|\n" +
+                $"| Difficulty | {heuristicResult.DifficultyLabel} | {llmResult.DifficultyLabel} |\n" +
+                $"| Action | {heuristicResult.RecommendedAction} | {llmResult.RecommendedAction} |\n" +
+                $"| Move limit | {heuristicResult.SuggestedMoveLimit} | {llmResult.SuggestedMoveLimit} |\n" +
+                $"| Target score | {heuristicResult.SuggestedTargetScore} | {llmResult.SuggestedTargetScore} |\n" +
+                $"| Tile types | {heuristicResult.SuggestedTileTypes} | {llmResult.SuggestedTileTypes} |\n\n" +
+                "## Portfolio Note\n\n" +
+                "This comparison demonstrates two AI game designer strategies on the same play log. " +
+                "The heuristic agent uses deterministic rules; the LLM agent uses `gpt-4o-mini` with natural language analysis. " +
+                "Both implement the same `IGameDesignerAgent` interface, making them swappable at runtime.\n";
+
+            WriteReport(reportPath, body);
+            Debug.Log($"Poko CLI compared agent strategies. Report: {reportPath}");
+        }
+
         public static void ConvertExcelData()
         {
             ExcelDataGenerator.ConvertAll();
             Debug.Log("Poko CLI converted Excel data into ScriptableObject databases.");
+        }
+
+        private static BoardTelemetry TelemetryFromAnalysis(PlayLogAnalysis analysis)
+        {
+            return new BoardTelemetry(
+                analysis.Width,
+                analysis.Height,
+                analysis.TileTypes,
+                0,
+                0,
+                analysis.FinalScore,
+                analysis.MovesUsed,
+                analysis.MaxCombo,
+                analysis.FeverTriggers > 0,
+                100,
+                analysis.TotalDamageDealt,
+                analysis.BombsDetonated,
+                analysis.SpecialBlocksCleared,
+                analysis.RainbowCleared);
         }
 
         private static void WriteCoreBoardReport(PokoPrototypeSceneSettings settings, string reportPath)
@@ -475,7 +551,7 @@ namespace PokoPuzzle.Editor
             {
                 for (var row = height - 1; row >= 0; row--)
                 {
-                    var tileCount = HexGridUtility.RowSize(row);
+                    var tileCount = HexGridUtility.RowSize(row, width);
                     var isEven = (row & 1) == 0;
 
                     result.Append(isEven ? "  / " : "  \\___/ ");
@@ -1577,7 +1653,7 @@ namespace PokoPuzzle.Editor
                 var current = stack.Pop();
                 count++;
 
-                foreach (var next in HexGridUtility.GetNeighbors(current.x, current.y, height))
+                foreach (var next in HexGridUtility.GetNeighbors(current.x, current.y, width, height))
                 {
                     if (visited[next.x, next.y] || board[next.x, next.y] != targetType)
                     {
@@ -1594,11 +1670,12 @@ namespace PokoPuzzle.Editor
 
         private static int CountSameNeighbors(int[,] board, int column, int row)
         {
+            var width = board.GetLength(0);
             var height = board.GetLength(1);
             var targetType = board[column, row];
             var count = 0;
 
-            foreach (var next in HexGridUtility.GetNeighbors(column, row, height))
+            foreach (var next in HexGridUtility.GetNeighbors(column, row, width, height))
             {
                 if (board[next.x, next.y] == targetType)
                 {

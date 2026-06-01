@@ -36,11 +36,18 @@ namespace Tests
         }
 
         [Test]
-        public void BlueBomb_LargerThanRedBomb()
+        public void BlueBomb_UsesTwoRingHexRadius()
         {
-            var red = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Red).Count();
-            var blue = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Blue).Count();
-            Assert.Greater(blue, red);
+            var blue = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Blue).ToList();
+            Assert.AreEqual(17, blue.Count);
+        }
+
+        [Test]
+        public void BlueBomb_CornerLosesOffBoardArea()
+        {
+            var center = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Blue).ToList();
+            var corner = BoardBomb.GetAffectedPositions(0, 0, 13, BombType.Blue).ToList();
+            Assert.Less(corner.Count, center.Count);
         }
 
         [Test]
@@ -74,6 +81,25 @@ namespace Tests
         {
             var positions = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Red).ToList();
             Assert.GreaterOrEqual(positions.Count, 7);
+        }
+
+        [Test]
+        public void RedBomb_CornerStillClearsLongLines()
+        {
+            var positions = BoardBomb.GetAffectedPositions(0, 0, 13, BombType.Red).ToList();
+            Assert.Greater(positions.Count, BoardBomb.GetAffectedPositions(0, 0, 13, BombType.Blue).Count());
+        }
+
+        [Test]
+        public void RedBomb_CenterBoard_UsesParityAwareHexDirections()
+        {
+            var positions = BoardBomb.GetAffectedPositions(1, 6, 13, BombType.Red).ToList();
+            Assert.Contains(new Vector2Int(1, 5), positions);
+            Assert.Contains(new Vector2Int(2, 5), positions);
+            Assert.Contains(new Vector2Int(0, 6), positions);
+            Assert.Contains(new Vector2Int(2, 6), positions);
+            Assert.Contains(new Vector2Int(1, 7), positions);
+            Assert.Contains(new Vector2Int(2, 7), positions);
         }
 
         [Test]

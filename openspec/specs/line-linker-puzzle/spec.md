@@ -190,19 +190,19 @@ The system SHALL support a CLI-selected tile visual where each tile renders as a
 
 #### Scenario: Hex frames join into a puzzle board
 
-- **WHEN** the prototype scene enters Play mode with the default 4x13 circle-in-hex board
-- **THEN** adjacent hex frames visually meet as one connected 3-4-3-4 puzzle-board silhouette instead of separated individual tiles
+- **WHEN** the prototype scene enters Play mode with the default 7x7 circle-in-hex board
+- **THEN** adjacent hex frames visually meet as one connected PokoPang-like staggered puzzle-board silhouette instead of separated individual tiles
 
 #### Scenario: Row-offset hex grid matches pointy-top geometry
 
-- **WHEN** the board uses alternating 3-4 rows with horizontal row offsets
+- **WHEN** the board uses full-width rows with alternating horizontal row offsets
 - **THEN** the tile silhouette, collider, visual placement, and six-direction adjacency use matching pointy-top hex geometry
 
-#### Scenario: Collapse preserves 3-4-3-4 silhouette
+#### Scenario: Collapse preserves staggered board silhouette
 
 - **WHEN** tiles are cleared and the board collapses/refills
 - **THEN** tiles only occupy valid cells for each row
-- **AND** the alternating 3-4-3-4 board silhouette is preserved
+- **AND** the full-width staggered board silhouette is preserved
 
 #### Scenario: Core tiles keep stable color-shape identity
 

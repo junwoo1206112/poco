@@ -32,6 +32,12 @@ namespace PokoPuzzle.Core
             return (row & 1) == 0 ? 3 : 4;
         }
 
+        public static int RowSize(int row, int width)
+        {
+            var baseSize = Mathf.Max(3, width);
+            return (row & 1) == 0 ? baseSize - 1 : baseSize;
+        }
+
         public static Vector3 ToWorld(int column, int row, int width, int height, float spacing, bool useHexGrid)
         {
             if (!useHexGrid)
@@ -41,7 +47,7 @@ namespace PokoPuzzle.Core
                 return new Vector3(squareX, squareY, 0f);
             }
 
-            var maxRowSize = Mathf.Max(RowSize(0), RowSize(1));
+            var maxRowSize = Mathf.Max(RowSize(0, width), RowSize(1, width));
             var oddShift = IsOddRow(row) ? -0.5f : 0f;
             var x = (column - (maxRowSize - 1) * 0.5f + oddShift) * spacing;
             var y = (row - (height - 1) * 0.5f) * spacing * VerticalSpacingRatio;
@@ -68,6 +74,11 @@ namespace PokoPuzzle.Core
 
         public static IEnumerable<Vector2Int> GetNeighbors(int column, int row, int height)
         {
+            return GetNeighbors(column, row, 4, height);
+        }
+
+        public static IEnumerable<Vector2Int> GetNeighbors(int column, int row, int width, int height)
+        {
             foreach (var offset in GetNeighborOffsets(row))
             {
                 var nextCol = column + offset.x;
@@ -78,11 +89,38 @@ namespace PokoPuzzle.Core
                     continue;
                 }
 
-                if (nextCol < RowSize(nextRow))
+                if (nextCol < RowSize(nextRow, width))
                 {
                     yield return new Vector2Int(nextCol, nextRow);
                 }
             }
+        }
+
+        public static bool TryGetDirectionalNeighbor(int column, int row, int direction, int height, out Vector2Int neighbor)
+        {
+            return TryGetDirectionalNeighbor(column, row, direction, 4, height, out neighbor);
+        }
+
+        public static bool TryGetDirectionalNeighbor(int column, int row, int direction, int width, int height, out Vector2Int neighbor)
+        {
+            var offsets = GetNeighborOffsets(row);
+            if (direction < 0 || direction >= offsets.Length)
+            {
+                neighbor = default;
+                return false;
+            }
+
+            var offset = offsets[direction];
+            var nextCol = column + offset.x;
+            var nextRow = row + offset.y;
+            if (nextRow < 0 || nextRow >= height || nextCol < 0 || nextCol >= RowSize(nextRow, width))
+            {
+                neighbor = default;
+                return false;
+            }
+
+            neighbor = new Vector2Int(nextCol, nextRow);
+            return true;
         }
 
         public static int GetNeighborCount()

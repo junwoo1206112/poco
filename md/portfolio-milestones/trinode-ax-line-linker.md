@@ -36,9 +36,9 @@ Outputs:
 
 ## System Decisions
 
-- The board uses a 3-4-3-4 alternating hex shape to better match a PokoPang-style vertical mobile puzzle board.
+- The board uses a 7x7 full-row staggered hex shape so it reads closer to the original PokoPang block field.
 - The tile visual moved from full hex fill to circle-in-hex so the player reads both "piece" and "hex frame" at the same time.
-- The default tile spacing is tuned so adjacent pointy-top hex frames read as a joined 3-4-3-4 puzzle board instead of isolated pieces.
+- The default tile spacing is tuned so adjacent pointy-top hex frames read as a joined 7x7 puzzle board instead of isolated pieces.
 - The designer loop is evidence-first: play logs and Markdown/JSON reports under `md/` are treated as portfolio artifacts, not temporary debug output.
 - CLI commands create, validate, analyze, generate, apply, and retune puzzle state so the workflow is repeatable.
 
@@ -55,7 +55,7 @@ Outputs:
 
 ## Current Gap
 
-The implementation has the right portfolio direction, but the evidence set is not complete yet. The latest play log currently contains only a session start for the 4x13 prototype, so the next step is a real playthrough that records valid moves, invalid short releases, and an end state.
+The implementation has the right portfolio direction, but the evidence set is not complete yet. The older play log currently contains only a session start from the previous 4x13 prototype, so the next step is a real playthrough on the current 7x7 prototype that records valid moves, invalid short releases, and an end state.
 
 ## Next Validation Pass
 

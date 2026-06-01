@@ -26,8 +26,10 @@ The system SHALL make a Rainbow bomb remove all linkable tiles of the most commo
 
 - **WHEN** the player detonates a Rainbow bomb
 - **THEN** the board identifies the most common linkable tile type and removes every linkable tile of that type
+- **AND** the clear is presented as a visible detonation from the Rainbow bomb into the targeted color tiles
 
 #### Scenario: Rainbow bomb scores
 
 - **WHEN** a Rainbow bomb removes tiles
-- **THEN** the player gains score based on the removed tile count and the play log records a `rainbow_cleared` event
+- **THEN** the player gains score based on the removed tile count
+- **AND** the play log records a `rainbow_cleared` event with the removed tile count and gained score

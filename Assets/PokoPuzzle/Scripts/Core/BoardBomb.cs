@@ -12,84 +12,73 @@ namespace PokoPuzzle.Core
 
     public static class BoardBomb
     {
-        private static readonly Vector2Int[] RedBombDirections =
-        {
-            new Vector2Int(0, -1),
-            new Vector2Int(0, 1),
-            new Vector2Int(-1, 0),
-            new Vector2Int(1, 0),
-            new Vector2Int(-1, 1),
-            new Vector2Int(1, -1)
-        };
+        private const int BlueBombRadius = 2;
 
         public static IEnumerable<Vector2Int> GetAffectedPositions(int column, int row, int height, BombType bombType)
         {
+            return GetAffectedPositions(column, row, 4, height, bombType);
+        }
+
+        public static IEnumerable<Vector2Int> GetAffectedPositions(int column, int row, int width, int height, BombType bombType)
+        {
             if (bombType == BombType.Red)
             {
-                return GetRedBombPositions(column, row, height);
+                return GetRedBombPositions(column, row, width, height);
             }
 
             if (bombType == BombType.Blue)
             {
-                return GetBlueBombPositions(column, row, height);
+                return GetBlueBombPositions(column, row, width, height);
             }
 
             return System.Array.Empty<Vector2Int>();
         }
 
-        private static IEnumerable<Vector2Int> GetRedBombPositions(int column, int row, int height)
+        private static IEnumerable<Vector2Int> GetRedBombPositions(int column, int row, int width, int height)
         {
-            var affected = new HashSet<Vector2Int>();
+            var affected = new List<Vector2Int>();
             affected.Add(new Vector2Int(column, row));
 
-            foreach (var dir in RedBombDirections)
+            for (var direction = 0; direction < HexGridUtility.GetNeighborCount(); direction++)
             {
-                var c = column + dir.x;
-                var r = row + dir.y;
-
-                while (r >= 0 && r < height && c >= 0)
+                var c = column;
+                var r = row;
+                while (HexGridUtility.TryGetDirectionalNeighbor(c, r, direction, width, height, out var next))
                 {
-                    if (c >= HexGridUtility.RowSize(r))
-                    {
-                        break;
-                    }
-
-                    affected.Add(new Vector2Int(c, r));
-                    c += dir.x;
-                    r += dir.y;
+                    affected.Add(next);
+                    c = next.x;
+                    r = next.y;
                 }
             }
 
             return affected;
         }
 
-        private static IEnumerable<Vector2Int> GetBlueBombPositions(int column, int row, int height)
+        private static IEnumerable<Vector2Int> GetBlueBombPositions(int column, int row, int width, int height)
         {
-            var affected = new HashSet<Vector2Int>();
+            var visited = new HashSet<Vector2Int>();
+            var affected = new List<Vector2Int>();
+            var frontier = new Queue<(Vector2Int Position, int Distance)>();
+            var origin = new Vector2Int(column, row);
+            visited.Add(origin);
+            affected.Add(origin);
+            frontier.Enqueue((origin, 0));
 
-            for (var dr = -2; dr <= 2; dr++)
+            while (frontier.Count > 0)
             {
-                for (var dc = -2; dc <= 2; dc++)
+                var current = frontier.Dequeue();
+                if (current.Distance >= BlueBombRadius)
                 {
-                    if (Mathf.Abs(dr) + Mathf.Abs(dc) > 3)
+                    continue;
+                }
+
+                foreach (var neighbor in HexGridUtility.GetNeighbors(current.Position.x, current.Position.y, width, height))
+                {
+                    if (visited.Add(neighbor))
                     {
-                        continue;
+                        affected.Add(neighbor);
+                        frontier.Enqueue((neighbor, current.Distance + 1));
                     }
-
-                    var c = column + dc;
-                    var r = row + dr;
-
-                    if (r < 0 || r >= height || c < 0)
-                    {
-                        continue;
-                    }
-
-                    if (c >= HexGridUtility.RowSize(r))
-                    {
-                        continue;
-                    }
-
-                    affected.Add(new Vector2Int(c, r));
                 }
             }
 

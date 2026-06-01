@@ -25,6 +25,21 @@ namespace Tests
         }
 
         [Test]
+        public void RowSize_ConfiguredWidth_ReturnsFullWidthRows()
+        {
+            Assert.AreEqual(7, HexGridUtility.RowSize(0, 7));
+            Assert.AreEqual(7, HexGridUtility.RowSize(1, 7));
+        }
+
+        [Test]
+        public void GetNeighbors_ConfiguredWidth_UsesWiderRows()
+        {
+            var neighbors = HexGridUtility.GetNeighbors(5, 4, 7, 9).ToList();
+            Assert.IsTrue(neighbors.All(n => n.x >= 0 && n.x < HexGridUtility.RowSize(n.y, 7)));
+            Assert.Greater(neighbors.Count, 0);
+        }
+
+        [Test]
         public void GetNeighborCount_Always6()
         {
             Assert.AreEqual(6, HexGridUtility.GetNeighborCount());

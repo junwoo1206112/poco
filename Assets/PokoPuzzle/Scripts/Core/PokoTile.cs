@@ -12,6 +12,8 @@ namespace PokoPuzzle.Core
 
         private static Sprite rainbowSprite;
         private static Sprite statusOverlaySprite;
+        private static Sprite redBombSprite;
+        private static Sprite blueBombSprite;
 
         public int Column { get; private set; }
         public int Row { get; private set; }
@@ -21,8 +23,7 @@ namespace PokoPuzzle.Core
         public BombType BombType { get; private set; }
         public bool IsFrozen => BlockSubtype == PokoBlockSubtype.Frozen;
         public bool IsStone => BlockSubtype == PokoBlockSubtype.Stone;
-        public bool IsClock => BlockSubtype == PokoBlockSubtype.Clock;
-        public bool IsLinkable => (BlockSubtype == PokoBlockSubtype.None || BlockSubtype == PokoBlockSubtype.Clock) && !IsBomb;
+        public bool IsLinkable => !clearing && BlockSubtype == PokoBlockSubtype.None && !IsBomb;
 
         private float bombTimer = -1f;
         private bool selected;
@@ -32,7 +33,7 @@ namespace PokoPuzzle.Core
         private const float BombAutoDetonateTime = 5f;
         private static readonly Color FrozenTint = new Color(0.6f, 0.8f, 1f, 1f);
         private static readonly Color StoneTint = new Color(0.5f, 0.5f, 0.5f, 1f);
-        private static readonly Color ClockTint = new Color(0.5f, 1f, 0.5f, 1f);
+
         private static readonly Color BombGlow = new Color(1f, 1f, 1f, 0.3f);
 
         public void Initialize(int column, int row, PokoTileType type, Sprite sprite)
@@ -112,6 +113,8 @@ namespace PokoPuzzle.Core
             }
             else
             {
+                spriteRenderer.sprite = GetOrCreateBombSprite(bombType);
+                spriteRenderer.color = Color.white;
                 ApplyBombVisual();
             }
         }
@@ -141,12 +144,12 @@ namespace PokoPuzzle.Core
             if (flash2)
             {
                 spriteRenderer.color = Color.white;
+                spriteRenderer.sortingOrder = 4;
             }
             else
             {
-                spriteRenderer.color = BombType == BombType.Red
-                    ? new Color(1f, 0.2f, 0.2f)
-                    : new Color(0.2f, 0.4f, 1f);
+                spriteRenderer.color = Color.white;
+                spriteRenderer.sortingOrder = 3;
             }
 
             return false;
@@ -168,6 +171,82 @@ namespace PokoPuzzle.Core
             }
 
             StartCoroutine(AnimateClearAndDestroy(duration));
+        }
+
+        public void PlayPullToward(Vector3 targetPosition, float duration, float delay)
+        {
+            if (clearing)
+            {
+                return;
+            }
+
+            selected = false;
+            hinted = false;
+            if (hexCollider != null)
+            {
+                hexCollider.enabled = false;
+            }
+
+            StartCoroutine(AnimatePullToward(targetPosition, duration, delay));
+        }
+
+        public void PlayBlastAwayFrom(Vector3 origin, float duration, float delay)
+        {
+            if (clearing)
+            {
+                return;
+            }
+
+            selected = false;
+            hinted = false;
+            if (hexCollider != null)
+            {
+                hexCollider.enabled = false;
+            }
+
+            StartCoroutine(AnimateBlastAwayFrom(origin, duration, delay));
+        }
+
+        public void AnimateDrop(Vector3 targetPosition, float height, float delay)
+        {
+            if (clearing)
+            {
+                return;
+            }
+
+            StartCoroutine(AnimateDropCoroutine(targetPosition, height, delay));
+        }
+
+        private IEnumerator AnimateDropCoroutine(Vector3 targetPosition, float height, float delay)
+        {
+            var startPosition = new Vector3(targetPosition.x, targetPosition.y + height, targetPosition.z);
+            transform.position = startPosition;
+            yield return new WaitForSeconds(delay);
+
+            var duration = Mathf.Lerp(0.08f, 0.18f, Mathf.Clamp01(height * 0.25f));
+            var time = 0f;
+            while (time < duration)
+            {
+                var t = time / duration;
+                var eased = 1f - Mathf.Pow(1f - t, 2.5f);
+                transform.position = Vector3.Lerp(startPosition, targetPosition, eased);
+                time += Time.deltaTime;
+                yield return null;
+            }
+
+            transform.position = targetPosition;
+        }
+
+        public void PlayRainbowTargetPulse(Color targetColor, float duration, float delay)
+        {
+            if (clearing)
+            {
+                return;
+            }
+
+            selected = false;
+            hinted = false;
+            StartCoroutine(AnimateRainbowTargetPulse(targetColor, duration, delay));
         }
 
         private void SetHexCollider()
@@ -280,13 +359,12 @@ namespace PokoPuzzle.Core
                 return;
             }
 
-            var baseColor = Type.ToColor();
             if (IsBomb)
             {
                 return;
             }
 
-            var color = whiteBlend > 0f ? Color.Lerp(baseColor, Color.white, whiteBlend) : baseColor;
+            var color = Color.white;
 
             if (IsFrozen)
             {
@@ -297,11 +375,6 @@ namespace PokoPuzzle.Core
             {
                 color = Color.Lerp(color, StoneTint, 0.6f);
                 ApplyStatusOverlay(new Color(0.38f, 0.38f, 0.38f, 0.88f), 1.04f, 3);
-            }
-            else if (IsClock)
-            {
-                color = Color.Lerp(color, ClockTint, 0.4f);
-                HideStatusOverlay();
             }
             else
             {
@@ -318,15 +391,20 @@ namespace PokoPuzzle.Core
                 return;
             }
 
-            spriteRenderer.sprite = CreateBombSprite();
-            spriteRenderer.color = BombType == BombType.Red ? new Color(1f, 0.2f, 0.2f) : new Color(0.2f, 0.4f, 1f);
+            spriteRenderer.color = Color.white;
             spriteRenderer.sortingOrder = 3;
-            HideStatusOverlay();
+
+            var overlayColor = BombType == BombType.Red
+                ? new Color(1f, 0.22f, 0.22f, 0.7f)
+                : new Color(0.22f, 0.44f, 1f, 0.7f);
+            ApplyStatusOverlay(overlayColor, 1.1f, 4);
         }
 
         private IEnumerator AnimateClearAndDestroy(float duration)
         {
             var startScale = transform.localScale;
+            var startPosition = transform.localPosition;
+            var shakeStrength = 0.045f;
             var startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
             var overlayStartColor = statusOverlay != null ? statusOverlay.color : Color.clear;
             var time = 0f;
@@ -337,6 +415,11 @@ namespace PokoPuzzle.Core
                     ? Mathf.Lerp(1f, 1.24f, t / 0.38f)
                     : Mathf.Lerp(1.24f, 0.12f, (t - 0.38f) / 0.62f);
                 transform.localScale = startScale * pop;
+                var shakeDamp = 1f - t;
+                transform.localPosition = startPosition + new Vector3(
+                    Mathf.Sin(t * 78f) * shakeStrength * shakeDamp,
+                    Mathf.Cos(t * 63f) * shakeStrength * 0.65f * shakeDamp,
+                    0f);
                 if (spriteRenderer != null)
                 {
                     var color = startColor;
@@ -360,6 +443,143 @@ namespace PokoPuzzle.Core
             Destroy(gameObject);
         }
 
+        private IEnumerator AnimatePullToward(Vector3 targetPosition, float duration, float delay)
+        {
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            var startPosition = transform.position;
+            var startScale = transform.localScale;
+            var startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+            var pullTarget = new Vector3(targetPosition.x, targetPosition.y, startPosition.z);
+            var side = Vector3.Cross(Vector3.forward, pullTarget - startPosition).normalized;
+            if (side.sqrMagnitude < 0.001f)
+            {
+                side = Vector3.right;
+            }
+
+            var time = 0f;
+            while (time < duration && !clearing)
+            {
+                var t = time / duration;
+                var eased = 1f - Mathf.Pow(1f - t, 2.4f);
+                var wobble = Mathf.Sin(t * Mathf.PI * 2.5f) * 0.12f * (1f - t);
+                transform.position = Vector3.Lerp(startPosition, pullTarget, eased) + side * wobble;
+                transform.localScale = startScale * Mathf.Lerp(1f, 0.32f, eased);
+
+                if (spriteRenderer != null)
+                {
+                    var color = startColor;
+                    color.a = Mathf.Lerp(startColor.a, 0.78f, t);
+                    spriteRenderer.color = color;
+                    spriteRenderer.sortingOrder = 11;
+                }
+
+                if (statusOverlay != null)
+                {
+                    statusOverlay.sortingOrder = 12;
+                }
+
+                time += Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        private IEnumerator AnimateBlastAwayFrom(Vector3 origin, float duration, float delay)
+        {
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            var startPosition = transform.position;
+            var startScale = transform.localScale;
+            var startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+            var direction = startPosition - origin;
+            if (direction.sqrMagnitude < 0.001f)
+            {
+                direction = Vector3.up;
+            }
+
+            direction.z = 0f;
+            direction.Normalize();
+            var endPosition = startPosition + direction * 0.42f;
+            var spin = Random.Range(-360f, 360f);
+            var time = 0f;
+
+            while (time < duration && !clearing)
+            {
+                var t = time / duration;
+                var eased = 1f - Mathf.Pow(1f - t, 2f);
+                transform.position = Vector3.Lerp(startPosition, endPosition, eased);
+                transform.localScale = startScale * Mathf.Lerp(1f, 1.22f, Mathf.Sin(t * Mathf.PI));
+                transform.Rotate(0f, 0f, spin * Time.deltaTime);
+
+                if (spriteRenderer != null)
+                {
+                    var color = Color.Lerp(startColor, new Color(1f, 0.62f, 0.12f, startColor.a), Mathf.Sin(t * Mathf.PI));
+                    color.a = Mathf.Lerp(startColor.a, 0.86f, t);
+                    spriteRenderer.color = color;
+                    spriteRenderer.sortingOrder = 11;
+                }
+
+                if (statusOverlay != null)
+                {
+                    statusOverlay.sortingOrder = 12;
+                }
+
+                time += Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        private IEnumerator AnimateRainbowTargetPulse(Color targetColor, float duration, float delay)
+        {
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            var startScale = transform.localScale;
+            var startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+            var startSortingOrder = spriteRenderer != null ? spriteRenderer.sortingOrder : 0;
+            var time = 0f;
+
+            while (time < duration && !clearing)
+            {
+                var t = time / duration;
+                var rainbow = Color.HSVToRGB(Mathf.Repeat(t * 2.4f, 1f), 0.72f, 1f);
+                rainbow.a = startColor.a;
+                transform.localScale = startScale * (1f + Mathf.Sin(t * Mathf.PI * 4f) * 0.12f);
+
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.color = Color.Lerp(targetColor, rainbow, 0.45f + Mathf.Sin(t * Mathf.PI * 6f) * 0.25f);
+                    spriteRenderer.sortingOrder = 10;
+                }
+
+                if (statusOverlay != null)
+                {
+                    statusOverlay.sortingOrder = 11;
+                }
+
+                time += Time.deltaTime;
+                yield return null;
+            }
+
+            if (!clearing)
+            {
+                transform.localScale = startScale;
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.color = startColor;
+                    spriteRenderer.sortingOrder = startSortingOrder;
+                }
+            }
+        }
+
         private void EnsureStatusOverlay()
         {
             if (statusOverlay != null)
@@ -381,6 +601,7 @@ namespace PokoPuzzle.Core
         {
             EnsureStatusOverlay();
             statusOverlay.enabled = true;
+            statusOverlay.sprite = GetOrCreateStatusOverlaySprite();
             statusOverlay.color = color;
             statusOverlay.sortingOrder = sortingOrder;
             statusOverlay.transform.localScale = Vector3.one * scale;
@@ -391,6 +612,7 @@ namespace PokoPuzzle.Core
             if (statusOverlay != null)
             {
                 statusOverlay.enabled = false;
+                statusOverlay.sprite = GetOrCreateStatusOverlaySprite();
             }
         }
 
@@ -506,15 +728,33 @@ namespace PokoPuzzle.Core
             return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         }
 
-        private static Sprite CreateBombSprite()
+        private static Sprite GetOrCreateBombSprite(BombType bombType)
+        {
+            if (bombType == BombType.Red)
+            {
+                if (redBombSprite == null)
+                {
+                    redBombSprite = CreateBombSprite(BombType.Red);
+                }
+
+                return redBombSprite;
+            }
+
+            if (blueBombSprite == null)
+            {
+                blueBombSprite = CreateBombSprite(BombType.Blue);
+            }
+
+            return blueBombSprite;
+        }
+
+        private static Sprite CreateBombSprite(BombType bombType)
         {
             const int size = 96;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             var center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
             var outerRadius = size * 0.43f;
-            var innerRadius = size * 0.28f;
             var outer = new Vector2[6];
-            var inner = new Vector2[6];
 
             for (var index = 0; index < 6; index++)
             {
@@ -522,7 +762,6 @@ namespace PokoPuzzle.Core
                 var cos = Mathf.Cos(angle);
                 var sin = Mathf.Sin(angle);
                 outer[index] = new Vector2(center.x + outerRadius * cos, center.y + outerRadius * sin);
-                inner[index] = new Vector2(center.x + innerRadius * cos, center.y + innerRadius * sin);
             }
 
             for (var y = 0; y < size; y++)
@@ -531,25 +770,79 @@ namespace PokoPuzzle.Core
                 {
                     var point = new Vector2(x, y);
                     var inOuter = IsInsideHex(point, outer);
-                    var inInner = IsInsideHex(point, inner);
 
                     if (!inOuter)
                     {
                         texture.SetPixel(x, y, new Color(0f, 0f, 0f, 0f));
+                        continue;
                     }
-                    else if (inInner)
-                    {
-                        texture.SetPixel(x, y, new Color(1f, 1f, 1f, 0.9f));
-                    }
-                    else
-                    {
-                        texture.SetPixel(x, y, new Color(0.4f, 0.4f, 0.4f, 1f));
-                    }
+
+                    texture.SetPixel(x, y, bombType == BombType.Red
+                        ? RedBombPixel(point, center)
+                        : BlueBombPixel(point, center));
                 }
             }
 
             texture.Apply();
             return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+
+        private static Color RedBombPixel(Vector2 point, Vector2 center)
+        {
+            var offset = point - center;
+            var distance = offset.magnitude;
+            var angle = Mathf.Atan2(offset.y, offset.x);
+            var spoke = Mathf.Abs(Mathf.Sin(angle * 3f));
+            var isCore = distance <= 15f;
+            var isSpoke = distance <= 32f && spoke <= 0.2f;
+            var isOuterSpark = distance >= 27f && distance <= 36f && spoke <= 0.32f;
+            var baseColor = Color.Lerp(new Color(0.52f, 0.02f, 0.02f, 1f), new Color(1f, 0.18f, 0.08f, 1f), Mathf.Clamp01(1f - distance / 46f));
+
+            if (isOuterSpark)
+            {
+                return new Color(1f, 0.76f, 0.14f, 1f);
+            }
+
+            if (isSpoke)
+            {
+                return new Color(1f, 0.92f, 0.18f, 1f);
+            }
+
+            if (isCore)
+            {
+                return distance <= 8f ? Color.white : new Color(1f, 0.62f, 0.12f, 1f);
+            }
+
+            return baseColor;
+        }
+
+        private static Color BlueBombPixel(Vector2 point, Vector2 center)
+        {
+            var offset = point - center;
+            var distance = offset.magnitude;
+            var angle = Mathf.Atan2(offset.y, offset.x);
+            var ring = Mathf.Abs(Mathf.Sin(distance * 0.34f + angle * 2.2f));
+            var isCore = distance <= 12f;
+            var isSwirl = distance <= 34f && ring <= 0.2f;
+            var isOuterRing = distance >= 29f && distance <= 35f;
+            var baseColor = Color.Lerp(new Color(0.02f, 0.08f, 0.5f, 1f), new Color(0.2f, 0.62f, 1f, 1f), Mathf.Clamp01(1f - distance / 48f));
+
+            if (isOuterRing)
+            {
+                return new Color(0.52f, 0.9f, 1f, 1f);
+            }
+
+            if (isSwirl)
+            {
+                return new Color(0.82f, 0.96f, 1f, 1f);
+            }
+
+            if (isCore)
+            {
+                return distance <= 6f ? Color.white : new Color(0.54f, 0.88f, 1f, 1f);
+            }
+
+            return baseColor;
         }
 
         private static bool IsInsideHex(Vector2 point, Vector2[] vertices)

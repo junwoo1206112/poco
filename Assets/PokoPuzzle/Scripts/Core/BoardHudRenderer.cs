@@ -65,7 +65,7 @@ namespace PokoPuzzle.Core
             var boardHalfWidth = Mathf.Max(1f, width * spacing * 0.5f);
             var verticalSize = boardHalfHeight + 3.5f;
             var horizontalSize = boardHalfWidth / Mathf.Max(0.5f, boardCamera.aspect) + 2f;
-            boardCamera.orthographicSize = Mathf.Max(boardCamera.orthographicSize, 6.6f, verticalSize, horizontalSize);
+            boardCamera.orthographicSize = Mathf.Max(boardCamera.orthographicSize, 5f, verticalSize, horizontalSize);
 
             var cameraPosition = boardCamera.transform.position;
             boardCamera.transform.position = new Vector3(cameraPosition.x, 0.95f, cameraPosition.z);
@@ -161,8 +161,8 @@ namespace PokoPuzzle.Core
         public System.Action OnRestartRequested;
 
         public void OnGUI(int score, int timeRemaining, int comboCount, bool feverActive,
-            int feverTimerInt, string agentHudText, bool gameEnded, int targetScore,
-            BoardEnemy enemy, int enemySpawnIndex, float feverGauge = 0f, float feverGaugeMax = 100f)
+            int feverTimerInt, bool gameEnded, float roundTime,
+            BoardEnemy enemy, int enemySpawnIndex, float rainbowGauge = 0f, float rainbowGaugeMax = 100f)
         {
             if (!useScreenHud)
             {
@@ -173,14 +173,13 @@ namespace PokoPuzzle.Core
             var margin = Mathf.RoundToInt(16f * scale);
             DrawSkillPulseOverlay();
             var comboText = feverActive ? $"FEVER! ({feverTimerInt}s)" : comboCount > 0 ? $"Combo x{comboCount}" : "";
-            var scoreLabel = score >= targetScore ? score.ToString() : $"{score}/{targetScore}";
-            var scoreWidth = Mathf.Min(170f * scale, Screen.width * 0.34f);
-            var timeWidth = Mathf.Min(92f * scale, Screen.width * 0.22f);
-            var gaugeWidth = Mathf.Min(170f * scale, Screen.width * 0.34f);
+            var scoreLabel = score.ToString();
+            var scoreWidth = Mathf.Min(200f * scale, Screen.width * 0.5f);
+            var gaugeWidth = Mathf.Min(220f * scale, Screen.width * 0.4f);
             var topY = margin;
-            var scorePanel = new Rect(margin, topY, scoreWidth, 54f * scale);
-            var timePanel = new Rect((Screen.width - timeWidth) * 0.5f, topY, timeWidth, 54f * scale);
-            var gaugePanel = new Rect(Screen.width - margin - gaugeWidth, topY, gaugeWidth, 54f * scale);
+            var gaugePanelHeight = 80f * scale;
+            var scorePanel = new Rect((Screen.width - scoreWidth) * 0.5f, topY, scoreWidth, 54f * scale);
+            var gaugePanel = new Rect(Screen.width - margin - gaugeWidth, topY, gaugeWidth, gaugePanelHeight);
 
             DrawHudPanel(scorePanel);
             GUI.Label(
@@ -192,17 +191,6 @@ namespace PokoPuzzle.Core
                 scoreLabel,
                 CreateHudStyle(15f, FontStyle.Bold, Color.white, scale, TextAnchor.UpperCenter));
 
-            var timerColor = timeRemaining <= 10 ? new Color(1f, 0.3f, 0.3f) : new Color(0.86f, 0.93f, 1f);
-            DrawHudPanel(timePanel);
-            GUI.Label(
-                new Rect(timePanel.x + 6f * scale, timePanel.y + 4f * scale, timePanel.width - 12f * scale, 15f * scale),
-                "TIME",
-                CreateHudStyle(10f, FontStyle.Bold, new Color(0.74f, 0.88f, 1f), scale, TextAnchor.UpperCenter));
-            GUI.Label(
-                new Rect(timePanel.x + 6f * scale, timePanel.y + 17f * scale, timePanel.width - 12f * scale, 32f * scale),
-                timeRemaining.ToString(),
-                CreateHudStyle(25f, FontStyle.Bold, timerColor, scale, TextAnchor.UpperCenter));
-
             if (feverActive)
             {
                 var glow = 0.18f + Mathf.Sin(Time.time * 8f) * 0.06f;
@@ -210,20 +198,26 @@ namespace PokoPuzzle.Core
             }
 
             DrawHudPanel(gaugePanel);
-            var gaugeRatio = feverGaugeMax > 0f ? Mathf.Clamp01(feverGauge / feverGaugeMax) : 0f;
+            var rainbowRatio = rainbowGaugeMax > 0f ? Mathf.Clamp01(rainbowGauge / rainbowGaugeMax) : 0f;
+            var rainbowHue = Mathf.Repeat(Time.time * 0.1f, 1f);
+            var rainbowTextColor = Color.HSVToRGB(rainbowHue, 0.75f, 1f);
+            var labelText = rainbowRatio >= 1f ? "RAINBOW READY" : "RAINBOW";
+            var labelBright = rainbowRatio >= 1f ? 0.7f + Mathf.Sin(Time.time * 6f) * 0.3f : 1f;
+            rainbowTextColor *= labelBright;
+            var labelRect = new Rect(gaugePanel.x, gaugePanel.y + 6f * scale, gaugePanel.width, 22f * scale);
             GUI.Label(
-                new Rect(gaugePanel.x, gaugePanel.y + 4f * scale, gaugePanel.width, 16f * scale),
-                "FEVER",
-                CreateHudStyle(10f, FontStyle.Bold, new Color(1f, 0.78f, 0.38f), scale, TextAnchor.UpperCenter));
-            var gaugeBarRect = new Rect(gaugePanel.x + 8f * scale, gaugePanel.y + 22f * scale, gaugePanel.width - 16f * scale, 18f * scale);
-            var feverFill = feverActive
-                ? Color.Lerp(new Color(1f, 0.45f, 0.12f), new Color(1f, 0.95f, 0.22f), 0.5f + Mathf.Sin(Time.time * 10f) * 0.5f)
-                : new Color(1f, 0.45f, 0.12f);
-            DrawGaugeBar(gaugeBarRect, feverActive ? 1f : gaugeRatio, feverFill);
+                labelRect,
+                labelText,
+                CreateHudStyle(11f, FontStyle.Bold, rainbowTextColor, scale, TextAnchor.UpperCenter));
+            var gaugeBarRect = new Rect(gaugePanel.x + 8f * scale, gaugePanel.y + 32f * scale, gaugePanel.width - 16f * scale, 20f * scale);
+            var rainbowFill = Color.HSVToRGB(rainbowHue, 0.7f, 1f);
+            DrawGaugeBar(gaugeBarRect, rainbowRatio, rainbowFill);
+            var percentColor = rainbowRatio >= 1f ? new Color(1f, 0.9f, 0.4f) : Color.white;
+            var percentRect = new Rect(gaugePanel.x + 8f * scale, gaugePanel.y + 56f * scale, gaugePanel.width - 16f * scale, 14f * scale);
             GUI.Label(
-                gaugeBarRect,
-                feverActive ? $"{feverTimerInt}s" : $"{Mathf.RoundToInt(gaugeRatio * 100f)}%",
-                CreateHudStyle(11f, FontStyle.Bold, Color.white, scale, TextAnchor.MiddleCenter));
+                percentRect,
+                $"{Mathf.RoundToInt(rainbowRatio * 100f)}%",
+                CreateHudStyle(10f, FontStyle.Bold, percentColor, scale, TextAnchor.MiddleCenter));
 
             if (!string.IsNullOrEmpty(comboText))
             {
@@ -310,7 +304,7 @@ namespace PokoPuzzle.Core
             if (!string.IsNullOrWhiteSpace(feedbackMessage) && feedbackClearTime > Time.time)
             {
                 var feedbackWidth = Mathf.Min(Screen.width - margin * 2f, 340f * scale);
-                var feedbackY = enemyInfoY + (feverGaugeMax > 0f ? 22f * scale : 4f * scale);
+                var feedbackY = enemyInfoY + 22f * scale;
                 var feedbackPanel = new Rect(
                     (Screen.width - feedbackWidth) * 0.5f, feedbackY,
                     feedbackWidth, 32f * scale);
@@ -322,20 +316,33 @@ namespace PokoPuzzle.Core
                     CreateHudStyle(15f, FontStyle.Bold, feedbackColor, scale, TextAnchor.MiddleCenter));
             }
 
-            if (!string.IsNullOrWhiteSpace(agentHudText) && !gameEnded)
-            {
-                var agentWidth = Mathf.Min(Screen.width - margin * 2f, 360f * scale);
-                var agentPanel = new Rect((Screen.width - agentWidth) * 0.5f, Screen.height - 52f * scale, agentWidth, 38f * scale);
-                DrawHudPanel(agentPanel);
-                GUI.Label(
-                    new Rect(agentPanel.x + 10f * scale, agentPanel.y + 5f * scale, agentPanel.width - 20f * scale, agentPanel.height - 10f * scale),
-                    agentHudText,
-                    CreateHudStyle(10f, FontStyle.Normal, new Color(0.65f, 0.92f, 1f), scale, TextAnchor.UpperLeft));
-            }
+            var timerLabelWidth = 40f * scale;
+            var timerBarHeight = 26f * scale;
+            var timerBarY = Screen.height - 60f * scale;
+            var timerBarWidth = Mathf.Min(Screen.width - margin * 2f - timerLabelWidth - 6f * scale, 340f * scale);
+            var timerBarX = (Screen.width - timerBarWidth) * 0.5f + timerLabelWidth * 0.5f + 3f * scale;
+            var timerLabelRect = new Rect(timerBarX - timerLabelWidth - 6f * scale, timerBarY, timerLabelWidth, timerBarHeight);
+            var timerBarRect = new Rect(timerBarX, timerBarY, timerBarWidth, timerBarHeight);
+
+            var timerRatio = Mathf.Clamp01(timeRemaining / Mathf.Max(1f, roundTime));
+            var timerColor = new Color(1f, 0.85f, 0.15f);
+
+            DrawHudPanel(new Rect(timerBarX - 4f * scale, timerBarY - 2f * scale, timerBarWidth + 8f * scale, timerBarHeight + 4f * scale));
+            DrawGaugeBar(timerBarRect, timerRatio, timerColor);
+
+            GUI.Label(
+                timerLabelRect,
+                "TIME",
+                CreateHudStyle(12f, FontStyle.Bold, new Color(0.74f, 0.88f, 1f), scale, TextAnchor.MiddleRight));
+
+            GUI.Label(
+                timerBarRect,
+                timeRemaining.ToString(),
+                CreateHudStyle(14f, FontStyle.Bold, Color.white, scale, TextAnchor.MiddleCenter));
 
             if (gameEnded)
             {
-                DrawEndPanel(scale, score, targetScore);
+                DrawEndPanel(scale, score);
             }
         }
 
@@ -388,9 +395,14 @@ namespace PokoPuzzle.Core
         {
             var previousColor = GUI.color;
             GUI.color = new Color(0.08f, 0.10f, 0.16f, 0.95f);
-            GUI.Box(rect, GUIContent.none);
-            GUI.color = fillColor;
-            GUI.Box(new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(ratio), rect.height), GUIContent.none);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill);
+            if (ratio > 0f)
+            {
+                GUI.color = fillColor;
+                GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(ratio), rect.height),
+                    Texture2D.whiteTexture, ScaleMode.StretchToFill);
+            }
+
             GUI.color = previousColor;
         }
 
@@ -424,7 +436,7 @@ namespace PokoPuzzle.Core
             GUI.color = previousColor;
         }
 
-        private void DrawEndPanel(float scale, int score, int targetScore)
+        private void DrawEndPanel(float scale, int score)
         {
             var panelWidth = Mathf.Min(Screen.width - 28f * scale, 360f * scale);
             var panelHeight = 176f * scale;
@@ -437,11 +449,11 @@ namespace PokoPuzzle.Core
             DrawHudPanel(panel);
             GUI.Label(
                 new Rect(panel.x + 18f * scale, panel.y + 18f * scale, panel.width - 36f * scale, 40f * scale),
-                score >= targetScore ? "GAME CLEAR" : "TIME UP",
-                CreateHudStyle(28f, FontStyle.Bold, score >= targetScore ? new Color(0.40f, 1f, 0.55f) : new Color(1f, 0.42f, 0.42f), scale, TextAnchor.UpperCenter));
+                "TIME UP",
+                CreateHudStyle(28f, FontStyle.Bold, new Color(1f, 0.42f, 0.42f), scale, TextAnchor.UpperCenter));
             GUI.Label(
                 new Rect(panel.x + 18f * scale, panel.y + 66f * scale, panel.width - 36f * scale, 34f * scale),
-                $"Score {score} / Target {targetScore}",
+                $"Score {score}",
                 CreateHudStyle(15f, FontStyle.Normal, Color.white, scale, TextAnchor.UpperCenter));
 
             if (GUI.Button(

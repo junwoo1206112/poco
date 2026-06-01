@@ -4,7 +4,6 @@ namespace PokoPuzzle.Core
     {
         None,
         Frozen,
-        Stone,
-        Clock
+        Stone
     }
 }

@@ -24,7 +24,7 @@ Use `tools\poko-cli.cmd` for repeatable project operations. Do not rely only on 
 Recommended commands:
 
 ```cmd
-tools\poko-cli.cmd create-core-board --layout hex --tileVisual circle-in-hex --width 4 --height 13 --tileTypes 5 --spacing 0.74
+tools\poko-cli.cmd create-core-board --layout hex --tileVisual circle-in-hex --width 7 --height 7 --tileTypes 5 --spacing 0.72
 tools\poko-cli.cmd validate-core-board --scenePath Assets/Scenes/PokoPrototype.unity --reportPath md/cli-reports/core-board-validation.md
 tools\poko-cli.cmd convert-excel-data
 tools\poko-cli.cmd analyze-playlog --logPath md/playtest-logs/latest-playtest.jsonl --reportPath md/agent-reports/latest-playtest-analysis.md
@@ -35,10 +35,10 @@ Run Unity batchmode CLI commands only when the Unity editor is closed. If the ed
 
 ## Current Implementation Direction
 
-- Board shape is a 4x13 alternating 3-4-3-4 pointy-top hex board.
+- Board shape is a 7x7 full-row staggered pointy-top hex board.
 - Tiles use `CircleInHex` presentation so the board reads as a connected puzzle grid while each piece remains visible.
 - Normal tile identity should stay stable: same type means same color and same shape.
-- Collapse/refill must preserve the 3-4-3-4 silhouette after every clear.
+- Collapse/refill must preserve the alternating `width - 1` / `width` silhouette after every clear.
 - Runtime gameplay should not open `.xlsx` files directly.
 - Excel data is authored in `Assets/PokoPuzzle/Data/Excel/GameData.xlsx`.
 - `GameData.xlsx` uses `Enemy`, `Boss`, `Skill`, and `BalanceProfile` sheets.
@@ -71,7 +71,7 @@ Excel editing rules:
 2. `Tools > Poko Puzzle > Generate Excel Data Files` creates `GameData.xlsx`.
 3. `Tools > Poko Puzzle > Convert Excel Data To Assets` creates generated database assets.
 4. `LineLinkerBoard` receives `PokoEnemyDatabase`, `PokoRegularEnemyDatabase`, `PokoEnemySkillDatabase`, and `PokoBalanceProfileDatabase`.
-5. Play mode shows the 3-4-3-4 hex board without shape/color identity confusion.
+5. Play mode shows the 7x7 staggered hex board without shape/color identity confusion.
 6. Clearing tiles preserves the board silhouette.
 7. A play log is recorded and analyzed into `md/agent-reports/latest-playtest-analysis.md`.
 

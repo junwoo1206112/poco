@@ -1,42 +1,62 @@
 # Poko Engine CLI Puzzle Framework
 
-LLM designer review CLI notes: `md/llm-designer-review-cli.md`
-Level experiment planning CLI notes: `md/level-experiment-planning-cli.md`
-Promoted experiment winners write portfolio milestone notes under `md/portfolio-milestones/`.
-Designer loop status CLI notes: `md/designer-loop-status-cli.md`
+**트리노드 AX 인턴 (프로덕트 엔지니어) 포트폴리오 — 포코팡 스타일 Line-Linker 퍼즐 + AI 게임 기획자 에이전트**
 
-포코팡에서 영감을 받은 Line-Linker 퍼즐과 AI 게임 기획자 에이전트를 Unity 2D로 구현하는 포트폴리오용 프로토타입입니다.
+## Portfolio Summary
 
-## 현재 프로토타입
+| 영역 | 내용 |
+|------|------|
+| **Core** | Hex grid Line-Linker 퍼즐 — 드래그 체인, 콤보, 피버, 폭탄, 적 전투, 스페셜 블록 |
+| **AI Agent** | `IGameDesignerAgent` 인터페이스 기반 Heuristic + LLM 이중 전략 |
+| **Pipeline** | CLI 12개 명령어로 레벨 생성 → 플레이 → 분석 → 튜닝 → 실험 → 승격까지 자동화 |
+| **Tests** | 39개 유닛 테스트 (HexGrid, BoardBomb, BoardEnemy, Agent, TileType) |
+| **DI** | ScriptableObject + Resources.Load 기반 데이터 제공자 (Enemy, Skill, BalanceProfile) |
+| **Visual** | 100% procedural texture — 외부 이미지 에셋 불필요 |
 
-- 런타임에서 생성되는 7x7 Line-Linker 보드
-- 같은 색 타일을 드래그해 체인 연결
-- 3개 이상 연결 후 손을 떼면 제거, 점수 획득, 낙하, 리필 처리
-- 로컬 휴리스틱 기반 `Game Designer Agent`가 보드 난이도를 분석하고 다음 레벨 튜닝 방향 제안
-- 프로젝트 전용 Codex 스킬: `.codex/skills/poko-game-designer/SKILL.md`
+## 프로토타입 실행
 
-## 프로토타입 씬 생성 방법
+Unity에서 `Tools > Poko Puzzle > Create Prototype Scene` 실행 후 Play.
 
-Unity에서 프로젝트를 연 뒤 다음 메뉴를 실행합니다.
+## CLI 명령어
 
-`Tools > Poko Puzzle > Create Prototype Scene`
+```
+tools\poko-cli.cmd <command> [--key value ...]
+```
 
-아래 씬이 생성되고 저장됩니다.
+| 명령어 | 역할 |
+|--------|------|
+| `create-core-board` | 프로토타입 씬 생성 |
+| `validate-core-board` | 보드 무결성 검증 |
+| `analyze-board` | 보드 분석 (AI 난이도 평가) |
+| `generate-level` | 레벨 Config 에셋 생성 |
+| `apply-level` | 레벨 Config을 씬에 적용 |
+| `analyze-playlog` | 플레이 로그 분석 (난이도 진단) |
+| `retune-level` | 분석 결과로 레벨 재튜닝 |
+| `plan-level-experiments` | 3개 실험 배리언트 생성 |
+| `compare-level-experiments` | 실험 결과 비교 및 추천 |
+| `promote-experiment-winner` | 추천 배리언트 승격 |
+| `llm-design-review` | OpenAI GPT-4o-mini로 기획 리뷰 |
+| `compare-agent-strategies` | Heuristic vs LLM 에이전트 비교 리포트 |
+| `designer-loop-status` | 현재 디자이너 루프 상태 확인 |
+| `convert-excel-data` | Excel → ScriptableObject 변환 |
 
-`Assets/Scenes/PokoPrototype.unity`
+## AI Game Designer Agent
 
-그 다음 Play를 누르고 같은 색 원형 타일을 드래그하면 됩니다.
+두 가지 전략을 `IGameDesignerAgent` 인터페이스로 추상화:
 
-## 포트폴리오 방향
+- **HeuristicGameDesignerAgent**: 결정론적 규칙 7개 분기 (Rainbow, Fever, Combo, Easy, Hard, Normal 등)
+- **LLMGameDesignerAgent**: GPT-4o-mini에 보드 텔레메트리를 전송, JSON 구조화된 튜닝 제안 수신
+- API 키 미설정 시 자동으로 Heuristic 폴백
+- `compare-agent-strategies` 명령어로 동일 입력에 대한 두 전략 비교 리포트 생성
 
-이 프로젝트는 Unity 클라이언트 개발 역량과 AI 기반 게임 제작 역량을 함께 보여주기 위한 작업입니다.
+## 포트폴리오 증거
 
-- 플레이 가능한 캐주얼 퍼즐 코어
-- 데이터 기반 레벨 튜닝
-- AI 기획자 분석
-- `md/` 폴더에 남는 읽기 쉬운 포트폴리오 증거
+- `md/agent-reports/` — AI 에이전트 분석 결과
+- `md/experiment-reports/` — 실험 계획 및 비교
+- `md/portfolio-milestones/` — 마일스톤별 성과
+- `md/llm-reports/` — LLM 기획 리뷰 (API 키 설정 시)
+- `openspec/changes/` — OpenSpec 변경 관리
 
-트리노드 AX 지원용 전체 계획은 `md/trinode-ax-portfolio-plan.md`를 참고합니다.
-CLI/스킬 사용 전략은 `md/cli-skill-workflow.md`를 참고합니다.
-OpenSpec 적용 기록은 `md/openspec-adoption.md`를 참고합니다.
-Core Board & Input CLI 사용법은 `md/core-board-input-cli.md`를 참고합니다.
+## 기술 스택
+
+Unity 6000.3, URP 2D, Unity Input System 1.19, Unity Test Framework 1.6.0, C# 9.0 (netstandard2.1)

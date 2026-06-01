@@ -26,11 +26,14 @@ A bomb tile SHALL detonate either on player tap, or automatically after 5 second
 
 - **WHEN** the player taps a Red Bomb tile
 - **THEN** the bomb detonates, clearing all tiles in its 6-direction straight lines (up/down/left/right and two diagonal hex directions)
+- **AND** the clear remains effective from edges or corners because the lines continue until the board boundary
 
 #### Scenario: Player taps a Blue Bomb
 
 - **WHEN** the player taps a Blue Bomb tile
-- **THEN** the bomb detonates, clearing all tiles in a 3x3 radius around it
+- **THEN** the bomb pulls affected nearby hex tiles toward the bomb center before detonation
+- **AND** the bomb clears the origin-adjacent 2-ring hex burst area
+- **AND** the clear can lose affected area near edges or corners because off-board radius cells do not exist
 
 #### Scenario: Bomb auto-detonates
 

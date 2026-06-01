@@ -87,6 +87,12 @@ namespace PokoPuzzle.Editor
                 else if (line.Contains("\"event\":\"combat\""))
                 {
                     var combatEvent = GetString(line, "combatEvent", "");
+                    var combo = GetInt(line, "combo", 0);
+                    if (combo > analysis.MaxCombo)
+                    {
+                        analysis.MaxCombo = combo;
+                    }
+
                     switch (combatEvent)
                     {
                         case "enemy_damage":
@@ -100,6 +106,9 @@ namespace PokoPuzzle.Editor
                             break;
                         case "rainbow_cleared":
                             analysis.RainbowCleared++;
+                            break;
+                        case "special_block_clear":
+                            analysis.SpecialBlocksCleared++;
                             break;
                     }
                 }

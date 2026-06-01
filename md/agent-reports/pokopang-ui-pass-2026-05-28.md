@@ -12,8 +12,8 @@ Improve the prototype HUD toward the readable structure of a PokoPang-style mobi
 
 ## Applied Direction
 
-- Keep score, timer, and fever charge in a compact top information strip.
-- Treat the fever charge as a play-state meter, not a rainbow-bomb meter.
+- Keep score, timer, and Rainbow charge in a compact top information strip.
+- Treat the top-right charge as a Rainbow Gauge that creates Rainbow bombs; Fever remains a separate combo/timed state indicator.
 - Add a battle lane below the top strip with enemy or boss badge on the left and HP bar on the right.
 - Keep boss HP as a strong red combat read, while regular enemies use a cooler blue read.
 - Shorten score text so the HUD survives narrow mobile widths.

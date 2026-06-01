@@ -79,6 +79,11 @@ if /I "%COMMAND%"=="llm-design-review" (
   exit /b %ERRORLEVEL%
 )
 
+if /I "%COMMAND%"=="compare-agent-strategies" (
+  "%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -executeMethod PokoPuzzle.Editor.PokoPuzzleCli.CompareAgentStrategies %*
+  exit /b %ERRORLEVEL%
+)
+
 if /I "%COMMAND%"=="convert-excel-data" (
   "%UNITY_EXE%" -batchmode -quit -projectPath "%PROJECT_DIR%" -executeMethod PokoPuzzle.Editor.PokoPuzzleCli.ConvertExcelData %*
   exit /b %ERRORLEVEL%
@@ -88,7 +93,7 @@ if /I "%COMMAND%"=="convert-excel-data" (
 echo Poko Puzzle CLI
 echo.
 echo Usage:
-echo   tools\poko-cli.cmd create-core-board [--layout hex] [--tileVisual circle-in-hex^|hex] [--scenePath Assets/Scenes/PokoPrototype.unity] [--width 4] [--height 13] [--tileTypes 5] [--spacing 0.74] [--reportPath md/cli-reports/core-board-input.md]
+echo   tools\poko-cli.cmd create-core-board [--layout hex] [--tileVisual circle-in-hex^|hex] [--scenePath Assets/Scenes/PokoPrototype.unity] [--width 7] [--height 7] [--tileTypes 5] [--spacing 0.72] [--reportPath md/cli-reports/core-board-input.md]
 echo   tools\poko-cli.cmd validate-core-board [--scenePath Assets/Scenes/PokoPrototype.unity] [--reportPath md/cli-reports/core-board-validation.md]
 echo   tools\poko-cli.cmd analyze-board [--layout hex] [--width 7] [--height 7] [--tileTypes 5] [--seed 1001] [--score 0] [--movesUsed 0] [--reportPath md/agent-reports/latest-board-analysis.md] [--jsonPath md/agent-reports/latest-board-analysis.json]
 echo   tools\poko-cli.cmd generate-level [--levelId level_001] [--layout hex] [--width 7] [--height 7] [--tileTypes 5] [--seed 1001] [--assetPath Assets/PokoPuzzle/Data/Generated/level_001.asset]
@@ -99,7 +104,8 @@ echo   tools\poko-cli.cmd plan-level-experiments [--experimentId exp_001] [--log
 echo   tools\poko-cli.cmd compare-level-experiments [--experimentId exp_001] [--controlLog md/playtest-logs/by-level/exp_001_control-latest.jsonl] [--reportPath md/experiment-reports/exp_001-comparison.md]
 echo   tools\poko-cli.cmd promote-experiment-winner [--experimentId exp_001] [--levelId exp_001_winner] [--applyScene true] [--reportPath md/experiment-reports/exp_001-promotion.md]
 echo   tools\poko-cli.cmd designer-loop-status [--experimentId exp_001] [--reportPath md/designer-loop/latest-status.md] [--jsonPath md/designer-loop/latest-status.json]
-echo   tools\poko-cli.cmd llm-design-review [--inputPath md/agent-reports/latest-playtest-analysis.json] [--model gpt-5.4-mini] [--reportPath md/llm-reports/latest-designer-review.md]
+echo   tools\poko-cli.cmd llm-design-review [--inputPath md/agent-reports/latest-playtest-analysis.json] [--model gpt-4o-mini] [--reportPath md/llm-reports/latest-designer-review.md]
+echo   tools\poko-cli.cmd compare-agent-strategies [--logPath md/playtest-logs/latest-playtest.jsonl] [--reportPath md/agent-reports/agent-strategy-comparison.md]
 echo   tools\poko-cli.cmd convert-excel-data
 echo.
 echo Optional:
