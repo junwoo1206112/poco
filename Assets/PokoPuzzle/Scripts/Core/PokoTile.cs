@@ -12,6 +12,7 @@ namespace PokoPuzzle.Core
 
         private static Sprite rainbowSprite;
         private static Sprite statusOverlaySprite;
+        private static Sprite petrifiedOverlaySprite;
         private static Sprite redBombSprite;
         private static Sprite blueBombSprite;
 
@@ -21,9 +22,12 @@ namespace PokoPuzzle.Core
         public PokoBlockSubtype BlockSubtype { get; private set; }
         public bool IsBomb { get; private set; }
         public BombType BombType { get; private set; }
+        public int BlockHitPoints { get; private set; }
         public bool IsFrozen => BlockSubtype == PokoBlockSubtype.Frozen;
         public bool IsStone => BlockSubtype == PokoBlockSubtype.Stone;
+        public bool IsPetrified => BlockSubtype == PokoBlockSubtype.Petrified;
         public bool IsLinkable => !clearing && BlockSubtype == PokoBlockSubtype.None && !IsBomb;
+        public bool IsClearing => clearing;
 
         private float bombTimer = -1f;
         private bool selected;
@@ -31,8 +35,9 @@ namespace PokoPuzzle.Core
         private bool clearing;
         private SpriteRenderer statusOverlay;
         private const float BombAutoDetonateTime = 5f;
-        private static readonly Color FrozenTint = new Color(0.6f, 0.8f, 1f, 1f);
-        private static readonly Color StoneTint = new Color(0.5f, 0.5f, 0.5f, 1f);
+        private static readonly Color FrozenTint = new Color(0.88f, 0.96f, 1f, 1f);
+        private static readonly Color StoneTint = new Color(0.72f, 0.72f, 0.72f, 1f);
+        private static readonly Color PetrifiedTint = new Color(0.72f, 0.42f, 1f, 1f);
 
         private static readonly Color BombGlow = new Color(1f, 1f, 1f, 0.3f);
 
@@ -52,6 +57,7 @@ namespace PokoPuzzle.Core
             Row = row;
             Type = type;
             BlockSubtype = PokoBlockSubtype.None;
+            BlockHitPoints = 0;
             IsBomb = false;
             selected = false;
             hinted = false;
@@ -72,7 +78,14 @@ namespace PokoPuzzle.Core
 
         public void ConfigureSubtype(PokoBlockSubtype subtype)
         {
+            var hitPoints = subtype == PokoBlockSubtype.Stone ? 2 : 0;
+            ConfigureSubtype(subtype, hitPoints);
+        }
+
+        public void ConfigureSubtype(PokoBlockSubtype subtype, int hitPoints)
+        {
             BlockSubtype = subtype;
+            BlockHitPoints = subtype == PokoBlockSubtype.Stone ? Mathf.Max(1, hitPoints) : 0;
             IsBomb = false;
             selected = false;
             hinted = false;
@@ -91,6 +104,7 @@ namespace PokoPuzzle.Core
         public void ConfigureBomb(BombType bombType)
         {
             BlockSubtype = PokoBlockSubtype.None;
+            BlockHitPoints = 0;
             IsBomb = true;
             selected = false;
             hinted = false;
@@ -117,6 +131,18 @@ namespace PokoPuzzle.Core
                 spriteRenderer.color = Color.white;
                 ApplyBombVisual();
             }
+        }
+
+        public bool DamageStone()
+        {
+            if (!IsStone)
+            {
+                return false;
+            }
+
+            BlockHitPoints = Mathf.Max(0, BlockHitPoints - 1);
+            ApplyVisual();
+            return BlockHitPoints == 0;
         }
 
         public bool TickBombTimer(float deltaTime)
@@ -368,13 +394,19 @@ namespace PokoPuzzle.Core
 
             if (IsFrozen)
             {
-                color = Color.Lerp(color, FrozenTint, 0.5f);
-                ApplyStatusOverlay(new Color(0.72f, 0.9f, 1f, 0.82f), 1.07f, 4);
+                color = Color.Lerp(color, FrozenTint, 0.2f);
+                ApplyStatusOverlay(new Color(0.68f, 0.92f, 1f, 0.72f), 1.08f, 4);
             }
             else if (IsStone)
             {
-                color = Color.Lerp(color, StoneTint, 0.6f);
-                ApplyStatusOverlay(new Color(0.38f, 0.38f, 0.38f, 0.88f), 1.04f, 3);
+                var tintWeight = BlockHitPoints <= 1 ? 0.24f : 0.36f;
+                color = Color.Lerp(color, StoneTint, tintWeight);
+                ApplyStatusOverlay(new Color(0.24f, 0.24f, 0.24f, 0.76f), 1.05f, 3);
+            }
+            else if (IsPetrified)
+            {
+                color = Color.Lerp(color, PetrifiedTint, 0.42f);
+                ApplyStatusOverlay(GetOrCreatePetrifiedOverlaySprite(), new Color(0.5f, 0.12f, 0.82f, 0.84f), 1.12f, 5);
             }
             else
             {
@@ -599,9 +631,14 @@ namespace PokoPuzzle.Core
 
         private void ApplyStatusOverlay(Color color, float scale, int sortingOrder)
         {
+            ApplyStatusOverlay(GetOrCreateStatusOverlaySprite(), color, scale, sortingOrder);
+        }
+
+        private void ApplyStatusOverlay(Sprite sprite, Color color, float scale, int sortingOrder)
+        {
             EnsureStatusOverlay();
             statusOverlay.enabled = true;
-            statusOverlay.sprite = GetOrCreateStatusOverlaySprite();
+            statusOverlay.sprite = sprite;
             statusOverlay.color = color;
             statusOverlay.sortingOrder = sortingOrder;
             statusOverlay.transform.localScale = Vector3.one * scale;
@@ -665,6 +702,55 @@ namespace PokoPuzzle.Core
             texture.Apply();
             statusOverlaySprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
             return statusOverlaySprite;
+        }
+
+        private static Sprite GetOrCreatePetrifiedOverlaySprite()
+        {
+            if (petrifiedOverlaySprite != null)
+            {
+                return petrifiedOverlaySprite;
+            }
+
+            const int size = 96;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+            var outerRadius = size * 0.45f;
+            var innerRadius = size * 0.35f;
+            var outer = new Vector2[6];
+            var inner = new Vector2[6];
+
+            for (var index = 0; index < 6; index++)
+            {
+                var angle = Mathf.Deg2Rad * (60f * index + 30f);
+                var cos = Mathf.Cos(angle);
+                var sin = Mathf.Sin(angle);
+                outer[index] = new Vector2(center.x + outerRadius * cos, center.y + outerRadius * sin);
+                inner[index] = new Vector2(center.x + innerRadius * cos, center.y + innerRadius * sin);
+            }
+
+            var crackA = new Vector2(center.x - size * 0.18f, center.y + size * 0.18f);
+            var crackB = new Vector2(center.x + size * 0.08f, center.y + size * 0.02f);
+            var crackC = new Vector2(center.x + size * 0.22f, center.y - size * 0.2f);
+            var crackD = new Vector2(center.x - size * 0.04f, center.y - size * 0.28f);
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var point = new Vector2(x, y);
+                    var inOuter = IsInsideHex(point, outer);
+                    var inInner = IsInsideHex(point, inner);
+                    var ring = inOuter && !inInner;
+                    var crack = DistanceToSegment(point, crackA, crackB) <= 2.2f ||
+                        DistanceToSegment(point, crackB, crackC) <= 2.2f ||
+                        DistanceToSegment(point, crackB, crackD) <= 1.8f;
+                    texture.SetPixel(x, y, ring || crack ? Color.white : new Color(0f, 0f, 0f, 0f));
+                }
+            }
+
+            texture.Apply();
+            petrifiedOverlaySprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+            return petrifiedOverlaySprite;
         }
 
         private static Sprite CreateRainbowGradient()
@@ -859,6 +945,14 @@ namespace PokoPuzzle.Core
                 }
             }
             return true;
+        }
+
+        private static float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b)
+        {
+            var segment = b - a;
+            var t = Vector2.Dot(point - a, segment) / Mathf.Max(0.0001f, Vector2.Dot(segment, segment));
+            t = Mathf.Clamp01(t);
+            return Vector2.Distance(point, a + segment * t);
         }
     }
 }
