@@ -29,7 +29,8 @@ namespace PokoPuzzle.Core.Data
                     Name = string.IsNullOrWhiteSpace(enemy.Name) ? "Monster" : enemy.Name,
                     Hp = Mathf.Max(1, enemy.Hp),
                     ScoreBonus = Mathf.Max(0, enemy.ScoreBonus),
-                    Role = string.IsNullOrWhiteSpace(enemy.Role) ? "Normal" : enemy.Role
+                    Role = string.IsNullOrWhiteSpace(enemy.Role) ? "Normal" : enemy.Role,
+                    PortraitPath = enemy.PortraitPath ?? string.Empty
                 });
             }
         }
@@ -46,7 +47,7 @@ namespace PokoPuzzle.Core.Data
 
             return enemies.Count > 0
                 ? enemies[0]
-                : new RegularEnemyData { EnemyId = enemyId, Name = "Monster", Hp = 30, ScoreBonus = 50, Role = "Normal" };
+                : new RegularEnemyData { EnemyId = enemyId, Name = "Monster", Hp = 30, ScoreBonus = 50, Role = "Normal", PortraitPath = string.Empty };
         }
 
         public IReadOnlyList<RegularEnemyData> GetAllEnemies()

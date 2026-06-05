@@ -28,7 +28,8 @@ namespace PokoPuzzle.Core.Data
                     Wave = wave.Wave,
                     Name = string.IsNullOrWhiteSpace(wave.Name) ? "Monster" : wave.Name,
                     Hp = Mathf.Max(1, wave.Hp),
-                    DefeatBonus = Mathf.Max(0, wave.DefeatBonus)
+                    DefeatBonus = Mathf.Max(0, wave.DefeatBonus),
+                    PortraitPath = wave.PortraitPath ?? string.Empty
                 });
             }
         }
@@ -50,7 +51,7 @@ namespace PokoPuzzle.Core.Data
 
             return waves.Count > 0
                 ? waves[^1]
-                : new EnemyWaveData { Wave = wave, Hp = 100, DefeatBonus = 500 };
+                : new EnemyWaveData { Wave = wave, Hp = 100, DefeatBonus = 500, PortraitPath = string.Empty };
         }
     }
 }

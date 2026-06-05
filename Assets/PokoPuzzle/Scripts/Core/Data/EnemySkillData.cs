@@ -7,7 +7,8 @@ namespace PokoPuzzle.Core.Data
         None,
         Freeze,
         Stone,
-        ColorSwap
+        ColorSwap,
+        Petrify
     }
 
     [System.Serializable]

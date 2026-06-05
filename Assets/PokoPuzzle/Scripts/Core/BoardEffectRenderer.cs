@@ -87,6 +87,7 @@ namespace PokoPuzzle.Core
             {
                 EnemySkillType.Freeze => "FREEZE",
                 EnemySkillType.Stone => "STONE",
+                EnemySkillType.Petrify => "PETRIFY",
                 EnemySkillType.ColorSwap => "COLOR SWAP",
                 _ => "SKILL"
             };
@@ -883,6 +884,7 @@ namespace PokoPuzzle.Core
             {
                 EnemySkillType.Freeze => new Color(0.55f, 0.85f, 1f, 0.95f),
                 EnemySkillType.Stone => new Color(0.62f, 0.62f, 0.62f, 0.95f),
+                EnemySkillType.Petrify => new Color(0.54f, 0.18f, 0.82f, 0.95f),
                 EnemySkillType.ColorSwap => new Color(1f, 0.45f, 0.95f, 0.95f),
                 _ => Color.white
             };

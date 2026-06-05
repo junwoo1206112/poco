@@ -158,16 +158,8 @@ namespace PokoPuzzle.Core
                 return true;
             }
 
-            if (BombType == BombType.Rainbow)
-            {
-                var flash = bombTimer <= 1f && Mathf.FloorToInt(bombTimer * 4f) % 2 == 0;
-                spriteRenderer.color = flash ? new Color(1f, 1f, 1f, 0.5f) : Color.white;
-                spriteRenderer.sortingOrder = flash ? 4 : 3;
-                return false;
-            }
-
-            var flash2 = bombTimer <= 1f && Mathf.FloorToInt(bombTimer * 4f) % 2 == 0;
-            if (flash2)
+            var flash = bombTimer <= 1f && Mathf.FloorToInt(bombTimer * 4f) % 2 == 0;
+            if (flash)
             {
                 spriteRenderer.color = Color.white;
                 spriteRenderer.sortingOrder = 4;

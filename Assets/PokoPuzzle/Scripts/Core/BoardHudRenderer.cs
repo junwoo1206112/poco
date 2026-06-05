@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PokoPuzzle.Core
@@ -22,8 +23,12 @@ namespace PokoPuzzle.Core
         private float skillPulseEndTime;
         private float bossHpIntroStartTime;
         private float bossHpIntroEndTime;
+        private float portraitIntroStartTime;
+        private float portraitIntroEndTime;
+        private BoardEnemy portraitIntroEnemy;
         private Color skillPulseColor = Color.white;
         private BoardEnemy lastEnemy;
+        private readonly Dictionary<string, Texture2D> portraitCache = new();
 
         public BoardHudRenderer(Camera boardCamera, TextMesh scoreText, TextMesh agentText,
             TextMesh feedbackText, bool useScreenHud, int width, int height, float spacing, bool useHexGrid)
@@ -160,6 +165,13 @@ namespace PokoPuzzle.Core
 
         public System.Action OnRestartRequested;
 
+        public void ShowPortraitIntro(BoardEnemy enemy)
+        {
+            portraitIntroEnemy = enemy;
+            portraitIntroStartTime = Time.time;
+            portraitIntroEndTime = Time.time + 2.5f;
+        }
+
         public void OnGUI(int score, int timeRemaining, int comboCount, bool feverActive,
             int feverTimerInt, bool gameEnded, float roundTime,
             BoardEnemy enemy, int enemySpawnIndex, float rainbowGauge = 0f, float rainbowGaugeMax = 100f)
@@ -269,11 +281,11 @@ namespace PokoPuzzle.Core
                         DrawHudPanel(ExpandRect(badgeRect, 4f * scale), new Color(1f, 0.65f, 0.12f, 0.78f));
                     }
 
-                    DrawBossBadge(badgeRect, enemy.Wave, scale);
+                    DrawBossBadge(badgeRect, enemy, scale);
                 }
                 else
                 {
-                    DrawEnemyBadge(new Rect(combatX, eBarY - 5f * scale, badgeWidth, eBarHeight + 10f * scale), scale);
+                    DrawEnemyBadge(new Rect(combatX, eBarY - 5f * scale, badgeWidth, eBarHeight + 10f * scale), enemy, scale);
                 }
 
                 var hpPanelRect = new Rect(eBarX - 4f * scale, eBarY - 2f * scale, eBarWidth + 8f * scale, eBarHeight + 4f * scale);
@@ -344,6 +356,62 @@ namespace PokoPuzzle.Core
             {
                 DrawEndPanel(scale, score);
             }
+
+            DrawPortraitIntro(scale);
+        }
+
+        private void DrawPortraitIntro(float scale)
+        {
+            if (Time.time >= portraitIntroEndTime || portraitIntroEnemy == null)
+            {
+                return;
+            }
+
+            var elapsed = Time.time - portraitIntroStartTime;
+            var duration = portraitIntroEndTime - portraitIntroStartTime;
+            var progress = Mathf.Clamp01(elapsed / duration);
+
+            var fadeIn = Mathf.Clamp01(progress * 4f);
+            var fadeOut = Mathf.Clamp01((1f - progress) * 4f);
+            var alpha = Mathf.Min(fadeIn, fadeOut);
+
+            var portrait = LoadPortrait(portraitIntroEnemy);
+            if (portrait == null)
+            {
+                return;
+            }
+
+            var previousColor = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha * 0.85f);
+
+            var portraitSize = Mathf.Min(Screen.width, Screen.height) * 0.35f;
+            var portraitRect = new Rect(
+                (Screen.width - portraitSize) * 0.5f,
+                (Screen.height - portraitSize) * 0.5f - 40f * scale,
+                portraitSize,
+                portraitSize);
+
+            var expandAmount = (1f - alpha) * 20f * scale;
+            var expandedRect = ExpandRect(portraitRect, expandAmount);
+
+            GUI.DrawTexture(expandedRect, portrait, ScaleMode.ScaleToFit, true, 1f);
+
+            var isBoss = portraitIntroEnemy.Wave > 0;
+            var label = isBoss ? $"BOSS - {portraitIntroEnemy.Name}" : portraitIntroEnemy.Name;
+            var labelColor = isBoss ? new Color(1f, 0.4f, 0.1f) : new Color(0.78f, 0.92f, 1f);
+
+            GUI.color = new Color(labelColor.r, labelColor.g, labelColor.b, alpha);
+            var labelRect = new Rect(
+                portraitRect.x,
+                portraitRect.y + portraitRect.height + 8f * scale,
+                portraitRect.width,
+                28f * scale);
+            GUI.Label(
+                labelRect,
+                label,
+                CreateHudStyle(isBoss ? 18f : 15f, FontStyle.Bold, labelColor, scale, TextAnchor.MiddleCenter));
+
+            GUI.color = previousColor;
         }
 
         private static GUIStyle CreateHudStyle(float fontSize, FontStyle fontStyle, Color color, float scale, TextAnchor alignment = TextAnchor.UpperLeft)
@@ -406,11 +474,20 @@ namespace PokoPuzzle.Core
             GUI.color = previousColor;
         }
 
-        private static void DrawEnemyBadge(Rect rect, float scale)
+        private void DrawEnemyBadge(Rect rect, BoardEnemy enemy, float scale)
         {
             var previousColor = GUI.color;
             GUI.color = new Color(0.08f, 0.22f, 0.34f, 0.96f);
             GUI.Box(rect, GUIContent.none);
+            var portrait = LoadPortrait(enemy);
+            if (portrait != null)
+            {
+                GUI.color = Color.white;
+                GUI.DrawTexture(ExpandRect(rect, -3f * scale), portrait, ScaleMode.ScaleToFit, true);
+                GUI.color = previousColor;
+                return;
+            }
+
             GUI.color = Color.white;
             GUI.Label(
                 new Rect(rect.x + 4f * scale, rect.y + 4f * scale, rect.width - 8f * scale, rect.height - 8f * scale),
@@ -419,11 +496,20 @@ namespace PokoPuzzle.Core
             GUI.color = previousColor;
         }
 
-        private static void DrawBossBadge(Rect rect, int wave, float scale)
+        private void DrawBossBadge(Rect rect, BoardEnemy enemy, float scale)
         {
             var previousColor = GUI.color;
             GUI.color = new Color(0.55f, 0.08f, 0.08f, 0.96f);
             GUI.Box(rect, GUIContent.none);
+            var portrait = LoadPortrait(enemy);
+            if (portrait != null)
+            {
+                GUI.color = Color.white;
+                GUI.DrawTexture(ExpandRect(rect, -4f * scale), portrait, ScaleMode.ScaleToFit, true);
+                GUI.color = previousColor;
+                return;
+            }
+
             GUI.color = Color.white;
             GUI.Label(
                 new Rect(rect.x + 4f * scale, rect.y + 2f * scale, rect.width - 8f * scale, 16f * scale),
@@ -431,9 +517,26 @@ namespace PokoPuzzle.Core
                 CreateHudStyle(13f, FontStyle.Bold, new Color(1f, 0.9f, 0.55f), scale, TextAnchor.MiddleCenter));
             GUI.Label(
                 new Rect(rect.x + 4f * scale, rect.y + 17f * scale, rect.width - 8f * scale, 14f * scale),
-                $"W{wave}",
+                enemy != null ? $"W{enemy.Wave}" : string.Empty,
                 CreateHudStyle(10f, FontStyle.Bold, Color.white, scale, TextAnchor.MiddleCenter));
             GUI.color = previousColor;
+        }
+
+        private Texture2D LoadPortrait(BoardEnemy enemy)
+        {
+            if (enemy == null || string.IsNullOrWhiteSpace(enemy.PortraitPath))
+            {
+                return null;
+            }
+
+            if (portraitCache.TryGetValue(enemy.PortraitPath, out var cached))
+            {
+                return cached;
+            }
+
+            var texture = Resources.Load<Texture2D>(enemy.PortraitPath);
+            portraitCache[enemy.PortraitPath] = texture;
+            return texture;
         }
 
         private void DrawEndPanel(float scale, int score)

@@ -136,31 +136,34 @@ namespace PokoPuzzle.Editor
             WriteSheet(
                 workbook,
                 "Enemy",
-                new[] { "EnemyId", "Name", "HP", "ScoreBonus", "Role", "Enabled" },
+                new[] { "EnemyId", "Name", "HP", "ScoreBonus", "Role", "Enabled", "PortraitPath" },
                 new[]
                 {
-                    new[] { "1", "Frostbinder Imp", "45", "50", "Normal", "TRUE" },
-                    new[] { "2", "Rime Wisp", "60", "75", "Flying", "TRUE" },
-                    new[] { "3", "Granite Mite", "50", "60", "Normal", "TRUE" },
-                    new[] { "4", "Crystal Guard", "75", "90", "Armored", "TRUE" },
-                    new[] { "5", "Prism Bat", "70", "120", "Flying", "TRUE" },
-                    new[] { "6", "Chroma Shifter", "55", "55", "Dark", "TRUE" },
-                    new[] { "7", "Icebound Larva", "85", "85", "Normal", "TRUE" },
-                    new[] { "8", "Stonehide Serpent", "40", "45", "Armored", "TRUE" },
-                    new[] { "9", "Hue Imp", "70", "70", "Dark", "TRUE" },
-                    new[] { "10", "Chroma Wisp", "80", "110", "Flying", "TRUE" }
+                    new[] { "1", "Frostbinder Imp", "45", "50", "Normal", "TRUE", "EnemyPortraits/frostbinder_imp" },
+                    new[] { "2", "Rime Wisp", "60", "75", "Flying", "TRUE", "EnemyPortraits/rime_wisp" },
+                    new[] { "3", "Granite Mite", "50", "60", "Normal", "TRUE", "EnemyPortraits/granite_mite" },
+                    new[] { "4", "Crystal Guard", "75", "90", "Armored", "TRUE", "EnemyPortraits/crystal_guard" },
+                    new[] { "5", "Prism Bat", "70", "120", "Flying", "TRUE", "EnemyPortraits/prism_bat" },
+                    new[] { "6", "Chroma Shifter", "55", "55", "Dark", "TRUE", "EnemyPortraits/chroma_shifter" },
+                    new[] { "7", "Icebound Larva", "85", "85", "Normal", "TRUE", "EnemyPortraits/icebound_larva" },
+                    new[] { "8", "Stonehide Serpent", "40", "45", "Armored", "TRUE", "EnemyPortraits/stonehide_serpent" },
+                    new[] { "9", "Hue Imp", "70", "70", "Dark", "TRUE", "EnemyPortraits/hue_imp" },
+                    new[] { "10", "Chroma Wisp", "80", "110", "Flying", "TRUE", "EnemyPortraits/chroma_wisp" },
+                    new[] { "11", "Basalt Crawler", "85", "95", "Petrified", "TRUE", "EnemyPortraits/basalt_crawler" },
+                    new[] { "12", "Onyx Gargoyle", "110", "130", "Petrified", "TRUE", "EnemyPortraits/onyx_gargoyle" }
                 });
             WriteSheet(
                 workbook,
                 "Boss",
-                new[] { "Wave", "Name", "HP", "DefeatBonus", "Enabled" },
+                new[] { "Wave", "Name", "HP", "DefeatBonus", "Enabled", "PortraitPath" },
                 new[]
                 {
-                    new[] { "1", "Frostbind Queen", "240", "500", "TRUE" },
-                    new[] { "2", "Stoneheart Golem", "300", "550", "TRUE" },
-                    new[] { "3", "Prism Trickster", "380", "600", "TRUE" },
-                    new[] { "4", "Blizzard Wyrm", "480", "750", "TRUE" },
-                    new[] { "5", "Chroma Overlord", "650", "1000", "TRUE" }
+                    new[] { "1", "Frostbind Queen", "240", "500", "TRUE", "EnemyPortraits/frostbind_queen" },
+                    new[] { "2", "Stoneheart Golem", "300", "550", "TRUE", "EnemyPortraits/stoneheart_golem" },
+                    new[] { "3", "Prism Trickster", "380", "600", "TRUE", "EnemyPortraits/prism_trickster" },
+                    new[] { "4", "Blizzard Wyrm", "480", "750", "TRUE", "EnemyPortraits/blizzard_wyrm" },
+                    new[] { "5", "Chroma Overlord", "650", "1000", "TRUE", "EnemyPortraits/chroma_overlord" },
+                    new[] { "6", "Obsidian Basilisk", "760", "1200", "TRUE", "EnemyPortraits/obsidian_basilisk" }
                 });
             WriteSheet(
                 workbook,
@@ -172,7 +175,8 @@ namespace PokoPuzzle.Editor
                     new[] { "2", "Board", "stone", "2", "15", "", "TRUE" },
                     new[] { "3", "Board", "colorswap", "3", "14", "", "TRUE" },
                     new[] { "4", "Board", "freeze", "5", "10", "", "TRUE" },
-                    new[] { "5", "Board", "colorswap", "5", "10", "", "TRUE" }
+                    new[] { "5", "Board", "colorswap", "5", "10", "", "TRUE" },
+                    new[] { "6", "Board", "petrify", "3", "16", "", "TRUE" }
                 });
             WriteSheet(
                 workbook,

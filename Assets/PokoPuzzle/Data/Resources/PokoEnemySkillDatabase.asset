@@ -33,3 +33,7 @@ MonoBehaviour:
     SkillType: 3
     TargetCount: 5
     CooldownSec: 10
+  - Wave: 6
+    SkillType: 4
+    TargetCount: 3
+    CooldownSec: 16

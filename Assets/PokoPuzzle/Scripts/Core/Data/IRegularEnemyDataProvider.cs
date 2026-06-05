@@ -10,6 +10,7 @@ namespace PokoPuzzle.Core.Data
         public int Hp;
         public int ScoreBonus;
         public string Role;
+        public string PortraitPath;
     }
 
     public interface IRegularEnemyDataProvider

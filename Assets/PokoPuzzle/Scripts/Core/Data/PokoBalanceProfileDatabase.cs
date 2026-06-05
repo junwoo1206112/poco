@@ -60,8 +60,8 @@ namespace PokoPuzzle.Core.Data
                     FeverGaugeMultiplier = 1f,
                     RefillAssistRate = 0.15f,
                     BlockerBudget = 2,
-                    RegularEnemyHpMultiplier = 1f,
-                    BossHpMultiplier = 1f,
+                    RegularEnemyHpMultiplier = 1.5f,
+                    BossHpMultiplier = 1.5f,
                     SkillCooldownMultiplier = 1f
                 };
         }

@@ -37,8 +37,11 @@ namespace PokoPuzzle.Core
 
         private static void FillCircleStyle(Texture2D texture, int size, Vector2 center, PokoTileType type)
         {
-            var outerRadius = size * 0.44f;
-            var innerRadius = size * 0.35f;
+            var outerRadius = size * 0.45f;
+            var innerRadius = size * 0.37f;
+            var baseColor = TileColor(type);
+            var rimDark = Color.Lerp(baseColor, Color.black, 0.46f);
+            var rimLight = Color.Lerp(baseColor, Color.white, 0.28f);
 
             for (var y = 0; y < size; y++)
             {
@@ -58,20 +61,24 @@ namespace PokoPuzzle.Core
                     if (dist > innerRadius)
                     {
                         var ringT = (dist - innerRadius) / (outerRadius - innerRadius);
-                        var ringBright = Mathf.Lerp(1f, 0.15f, ringT);
-                        texture.SetPixel(x, y, new Color(ringBright, ringBright, ringBright, 1f));
+                        var rimColor = Color.Lerp(rimLight, rimDark, ringT);
+                        texture.SetPixel(x, y, new Color(rimColor.r, rimColor.g, rimColor.b, 1f));
                     }
                     else
                     {
                         var inShape = IsInsideShape(point, center, size, type);
-                        var faceBright = inShape ? Mathf.Lerp(0.85f, 1f, highlight) : Mathf.Lerp(0.45f, 0.65f, highlight);
-                        var rim = dist > innerRadius - 3f;
-                        if (rim)
+                        var edgeShade = Mathf.Clamp01(dist / innerRadius);
+                        var face = Color.Lerp(Color.Lerp(baseColor, Color.black, 0.22f), Color.Lerp(baseColor, Color.white, 0.2f), highlight);
+                        face = Color.Lerp(face, Color.Lerp(baseColor, Color.black, 0.32f), Mathf.Clamp01((edgeShade - 0.76f) / 0.24f));
+
+                        if (inShape)
                         {
-                            faceBright *= 0.5f;
+                            var mark = Color.Lerp(Color.white, baseColor, 0.08f);
+                            texture.SetPixel(x, y, new Color(mark.r, mark.g, mark.b, 1f));
+                            continue;
                         }
 
-                        texture.SetPixel(x, y, new Color(faceBright, faceBright, faceBright, 1f));
+                        texture.SetPixel(x, y, new Color(face.r, face.g, face.b, 1f));
                     }
                 }
             }

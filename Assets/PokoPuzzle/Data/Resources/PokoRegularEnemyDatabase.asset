@@ -18,48 +18,70 @@ MonoBehaviour:
     Hp: 45
     ScoreBonus: 50
     Role: Normal
+    PortraitPath: EnemyPortraits/frostbinder_imp
   - EnemyId: 2
     Name: Rime Wisp
     Hp: 60
     ScoreBonus: 75
     Role: Flying
+    PortraitPath: EnemyPortraits/rime_wisp
   - EnemyId: 3
     Name: Granite Mite
     Hp: 50
     ScoreBonus: 60
     Role: Normal
+    PortraitPath: EnemyPortraits/granite_mite
   - EnemyId: 4
     Name: Crystal Guard
     Hp: 75
     ScoreBonus: 90
     Role: Armored
+    PortraitPath: EnemyPortraits/crystal_guard
   - EnemyId: 5
     Name: Prism Bat
     Hp: 70
     ScoreBonus: 120
     Role: Flying
+    PortraitPath: EnemyPortraits/prism_bat
   - EnemyId: 6
     Name: Chroma Shifter
     Hp: 55
     ScoreBonus: 55
     Role: Dark
+    PortraitPath: EnemyPortraits/chroma_shifter
   - EnemyId: 7
     Name: Icebound Larva
     Hp: 85
     ScoreBonus: 85
     Role: Normal
+    PortraitPath: EnemyPortraits/icebound_larva
   - EnemyId: 8
     Name: Stonehide Serpent
     Hp: 40
     ScoreBonus: 45
     Role: Armored
+    PortraitPath: EnemyPortraits/stonehide_serpent
   - EnemyId: 9
     Name: Hue Imp
     Hp: 70
     ScoreBonus: 70
     Role: Dark
+    PortraitPath: EnemyPortraits/hue_imp
   - EnemyId: 10
     Name: Chroma Wisp
     Hp: 80
     ScoreBonus: 110
     Role: Flying
+    PortraitPath: EnemyPortraits/chroma_wisp
+  - EnemyId: 11
+    Name: Basalt Crawler
+    Hp: 85
+    ScoreBonus: 95
+    Role: Petrified
+    PortraitPath: EnemyPortraits/basalt_crawler
+  - EnemyId: 12
+    Name: Onyx Gargoyle
+    Hp: 110
+    ScoreBonus: 130
+    Role: Petrified
+    PortraitPath: EnemyPortraits/onyx_gargoyle

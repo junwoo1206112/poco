@@ -36,3 +36,46 @@ The system SHALL record combat events in the play log for later analysis.
 
 - **WHEN** time runs out or moves are exhausted and the enemy is still alive
 - **THEN** the end-state log includes remaining enemy HP
+
+### Requirement: Weapon damage from bomb clears
+
+The system SHALL deal damage to the enemy when a bomb detonates and clears linkable tiles, treating bomb clears as "weapon clears."
+
+#### Scenario: Red bomb detonation damages enemy
+
+- **WHEN** a Red Bomb detonates and clears N linkable tiles
+- **THEN** the enemy SHALL take `N * 10` damage
+- **AND** the damage SHALL be presented as a visible damage number toward the enemy
+- **AND** the play log SHALL record a `weapon_damage` combat event with the damage amount
+
+#### Scenario: Blue bomb detonation damages enemy
+
+- **WHEN** a Blue Bomb detonates and clears N linkable tiles
+- **THEN** the enemy SHALL take `N * 10` damage
+- **AND** the damage SHALL be presented as a visible damage number toward the enemy
+
+#### Scenario: Rainbow bomb detonation damages enemy
+
+- **WHEN** a Rainbow Bomb detonates and clears N linkable tiles
+- **THEN** the enemy SHALL take `N * 10` damage
+- **AND** the damage SHALL be presented as a visible damage number toward the enemy
+
+#### Scenario: Weapon clear can defeat enemy
+
+- **WHEN** weapon damage from a bomb detonation reduces enemy HP to 0
+- **THEN** the enemy SHALL be defeated and the defeat bonus SHALL be awarded
+- **AND** the next enemy SHALL spawn
+
+### Requirement: Enemy HP scaling for weapon damage
+
+The system SHALL apply a 1.5x HP multiplier to all enemies to compensate for the increased DPS from weapon damage.
+
+#### Scenario: Balance profile applies weapon damage HP multiplier
+
+- **WHEN** a balance profile is active with `RegularEnemyHpMultiplier` of 1.5
+- **THEN** regular enemy HP SHALL be multiplied by 1.5
+
+#### Scenario: Boss HP scales with weapon damage multiplier
+
+- **WHEN** a balance profile is active with `BossHpMultiplier` of 1.5
+- **THEN** boss enemy HP SHALL be multiplied by 1.5

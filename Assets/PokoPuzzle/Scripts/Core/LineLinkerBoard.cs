@@ -283,36 +283,39 @@ namespace PokoPuzzle.Core
             dragging = true;
             var tile = TileAtPointer(screenPosition);
             currentPointerTile = tile;
-                if (tile != null && !tile.IsLinkable)
+            if (tile != null && !tile.IsLinkable)
+            {
+                if (tile.IsBomb)
                 {
-                    if (tile.IsBomb)
-                    {
-                        DetonateBomb(tile);
-                        dragging = false;
-                        return;
-                    }
-                    else if (tile.IsFrozen)
-                    {
-                        hudRenderer.ShowFeedback("Frozen - clear adjacent tile to break", new Color(0.6f, 0.8f, 1f), 1.5f);
-                        dragging = false;
-                        return;
-                    }
-                    else if (tile.IsStone)
-                    {
-                        hudRenderer.ShowFeedback("Stone - falls to bottom", new Color(0.5f, 0.5f, 0.5f), 1.5f);
-                        dragging = false;
-                        return;
-                    }
-                    else if (tile.IsPetrified)
-                    {
-                        hudRenderer.ShowFeedback("Petrified - immune to bombs", new Color(0.62f, 0.28f, 0.9f), 1.5f);
-                        dragging = false;
-                        return;
-                    }
-
+                    DetonateBomb(tile);
                     dragging = false;
                     return;
                 }
+
+                if (tile.IsFrozen)
+                {
+                    hudRenderer.ShowFeedback("Frozen - clear adjacent tile to break", new Color(0.6f, 0.8f, 1f), 1.5f);
+                    dragging = false;
+                    return;
+                }
+
+                if (tile.IsStone)
+                {
+                    hudRenderer.ShowFeedback("Stone - falls to bottom", new Color(0.5f, 0.5f, 0.5f), 1.5f);
+                    dragging = false;
+                    return;
+                }
+
+                if (tile.IsPetrified)
+                {
+                    hudRenderer.ShowFeedback("Petrified - immune to bombs", new Color(0.62f, 0.28f, 0.9f), 1.5f);
+                    dragging = false;
+                    return;
+                }
+
+                dragging = false;
+                return;
+            }
 
             TryAddTileAtPointer(screenPosition);
         }
@@ -855,6 +858,28 @@ namespace PokoPuzzle.Core
             specialBlocksClearedCount++;
             playLogger?.LogCombatEvent("special_block_clear", 1, 1,
                 comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+            hudRenderer?.ShowFeedback("Frozen Clear! +20", new Color(0.6f, 0.8f, 1f), 1.2f);
+
+            if (enemy != null && !enemy.IsDefeated)
+            {
+                var dealt = enemy.ApplyDamage(1);
+                totalDamageDealt += dealt;
+                effectRenderer?.PlayDamage(tile.transform.position, dealt, enemy.Wave > 0);
+                hudRenderer?.PlayDamagePulse(enemy.Wave > 0);
+                playLogger?.LogCombatEvent("enemy_damage", dealt, enemy.CurrentHp,
+                    comboCount, feverActive, enemy.CurrentHp, enemy.MaxHp, Mathf.CeilToInt(timeRemaining));
+
+                if (enemy.IsDefeated)
+                {
+                    score += enemy.DefeatBonus;
+                    hudRenderer.ShowFeedback($"{enemy.Name} Defeated! +{enemy.DefeatBonus}", new Color(0.4f, 1f, 0.55f), 2f);
+
+                    if (!gameEnded)
+                    {
+                        SpawnNextEnemy();
+                    }
+                }
+            }
         }
 
         private bool HitStoneTileAt(int column, int row)
@@ -881,6 +906,29 @@ namespace PokoPuzzle.Core
             specialBlocksClearedCount++;
             playLogger?.LogCombatEvent("special_block_clear", 2, 1,
                 comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+            hudRenderer?.ShowFeedback("Stone Clear! +30", new Color(0.5f, 0.5f, 0.5f), 1.2f);
+
+            if (enemy != null && !enemy.IsDefeated)
+            {
+                var dealt = enemy.ApplyDamage(1);
+                totalDamageDealt += dealt;
+                effectRenderer?.PlayDamage(tile.transform.position, dealt, enemy.Wave > 0);
+                hudRenderer?.PlayDamagePulse(enemy.Wave > 0);
+                playLogger?.LogCombatEvent("enemy_damage", dealt, enemy.CurrentHp,
+                    comboCount, feverActive, enemy.CurrentHp, enemy.MaxHp, Mathf.CeilToInt(timeRemaining));
+
+                if (enemy.IsDefeated)
+                {
+                    score += enemy.DefeatBonus;
+                    hudRenderer.ShowFeedback($"{enemy.Name} Defeated! +{enemy.DefeatBonus}", new Color(0.4f, 1f, 0.55f), 2f);
+
+                    if (!gameEnded)
+                    {
+                        SpawnNextEnemy();
+                    }
+                }
+            }
+
             return true;
         }
 
@@ -903,6 +951,29 @@ namespace PokoPuzzle.Core
             specialBlocksClearedCount++;
             playLogger?.LogCombatEvent("special_block_clear", 2, 1,
                 comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+            hudRenderer?.ShowFeedback($"Stone Clear! +{scoreValue}", new Color(0.5f, 0.5f, 0.5f), 1.2f);
+
+            if (enemy != null && !enemy.IsDefeated)
+            {
+                var dealt = enemy.ApplyDamage(1);
+                totalDamageDealt += dealt;
+                effectRenderer?.PlayDamage(tile.transform.position, dealt, enemy.Wave > 0);
+                hudRenderer?.PlayDamagePulse(enemy.Wave > 0);
+                playLogger?.LogCombatEvent("enemy_damage", dealt, enemy.CurrentHp,
+                    comboCount, feverActive, enemy.CurrentHp, enemy.MaxHp, Mathf.CeilToInt(timeRemaining));
+
+                if (enemy.IsDefeated)
+                {
+                    score += enemy.DefeatBonus;
+                    hudRenderer.ShowFeedback($"{enemy.Name} Defeated! +{enemy.DefeatBonus}", new Color(0.4f, 1f, 0.55f), 2f);
+
+                    if (!gameEnded)
+                    {
+                        SpawnNextEnemy();
+                    }
+                }
+            }
+
             return true;
         }
 
@@ -1044,7 +1115,7 @@ namespace PokoPuzzle.Core
 
             bombTile.SetGridPosition(column, row, GridToWorld(column, row));
             var bombType = bombTile.BombType;
-            var bombPosition = bombTile != null ? bombTile.transform.position : Vector3.zero;
+            var bombPosition = bombTile.transform.position;
 
             bombTiles.Remove(bombTile);
             tiles[column, row] = null;
@@ -1523,6 +1594,7 @@ namespace PokoPuzzle.Core
                 CompactColumns(false);
             }
 
+            CompactColumns(false);
             CompactColumns(true);
             VerifyBoardIntegrity();
             EnsurePlayableChain();
@@ -1623,7 +1695,6 @@ namespace PokoPuzzle.Core
             foreach (var tile in movableTiles)
             {
                 var writeRow = segmentRows[writeIndex];
-                tiles[column, writeRow] = tile;
                 var targetPos = GridToWorld(column, writeRow);
 
                 if (tile.Row != writeRow || tile.Column != column)
@@ -1638,6 +1709,7 @@ namespace PokoPuzzle.Core
                     tile.SetGridPosition(column, writeRow, targetPos);
                 }
 
+                tiles[column, writeRow] = tile;
                 writeIndex++;
             }
 
@@ -1664,29 +1736,81 @@ namespace PokoPuzzle.Core
         private bool ClearBottomPetrifiedBlocks()
         {
             var clearedAny = false;
+            Debug.Log("[ClearBottomPetrifiedBlocks] START");
             for (var column = 0; column < width; column++)
             {
-                var validRows = GetValidRowsInColumn(column);
-                if (validRows.Count == 0)
+                for (var row = 0; row < height; row++)
                 {
-                    continue;
-                }
+                    if (!IsInsideBoard(column, row))
+                    {
+                        continue;
+                    }
 
-                var bottomRow = validRows[0];
-                var tile = tiles[column, bottomRow];
-                if (tile == null || !tile.IsPetrified)
-                {
-                    continue;
-                }
+                    var tile = tiles[column, row];
+                    Debug.Log($"[ClearBottomPetrifiedBlocks] col={column}, row={row}, tile={tile?.GetType().Name ?? "null"}, IsPetrified={tile?.IsPetrified}");
+                    if (tile == null || !tile.IsPetrified)
+                    {
+                        continue;
+                    }
 
-                tiles[column, bottomRow] = null;
-                tile.PlayClearAndDestroy();
-                score += 40;
-                specialBlocksClearedCount++;
-                playLogger?.LogCombatEvent("special_block_clear", 3, 1,
-                    comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
-                hudRenderer?.ShowFeedback("Petrified Clear! +40", new Color(0.62f, 0.28f, 0.9f), 1.2f);
-                clearedAny = true;
+                    var isAtBottom = true;
+                    for (var belowRow = row + 1; belowRow < height; belowRow++)
+                    {
+                        if (!IsInsideBoard(column, belowRow))
+                        {
+                            continue;
+                        }
+
+                        var belowTile = tiles[column, belowRow];
+                        if (belowTile != null && IsFixedObstacle(belowTile))
+                        {
+                            break;
+                        }
+                        else if (belowTile != null)
+                        {
+                            isAtBottom = false;
+                            break;
+                        }
+                    }
+
+                    Debug.Log($"[ClearBottomPetrifiedBlocks] col={column}, row={row}, isAtBottom={isAtBottom}");
+
+                    if (!isAtBottom)
+                    {
+                        continue;
+                    }
+
+                    tiles[column, row] = null;
+                    tile.PlayClearAndDestroy();
+                    score += 40;
+                    specialBlocksClearedCount++;
+                    playLogger?.LogCombatEvent("special_block_clear", 3, 1,
+                        comboCount, feverActive, enemy?.CurrentHp ?? 0, enemy?.MaxHp ?? 0, Mathf.CeilToInt(timeRemaining));
+                    hudRenderer?.ShowFeedback("Petrified Clear! +40", new Color(0.62f, 0.28f, 0.9f), 1.2f);
+                    clearedAny = true;
+                    Debug.Log($"[ClearBottomPetrifiedBlocks] Cleared petrified at col={column}, row={row}");
+
+                    if (enemy != null && !enemy.IsDefeated)
+                    {
+                        var dealt = enemy.ApplyDamage(1);
+                        totalDamageDealt += dealt;
+                        effectRenderer?.PlayDamage(tile.transform.position, dealt, enemy.Wave > 0);
+                        hudRenderer?.PlayDamagePulse(enemy.Wave > 0);
+                        playLogger?.LogCombatEvent("enemy_damage", dealt, enemy.CurrentHp,
+                            comboCount, feverActive, enemy.CurrentHp, enemy.MaxHp, Mathf.CeilToInt(timeRemaining));
+
+                        if (enemy.IsDefeated)
+                        {
+                            score += enemy.DefeatBonus;
+                            hudRenderer.ShowFeedback($"{enemy.Name} Defeated! +{enemy.DefeatBonus}", new Color(0.4f, 1f, 0.55f), 2f);
+
+                            if (!gameEnded)
+                            {
+                                SpawnNextEnemy();
+                            }
+                        }
+                    }
+                }
             }
 
             return clearedAny;
@@ -1771,10 +1895,6 @@ namespace PokoPuzzle.Core
                 if (tile != null)
                 {
                     tile.SetLinkHint(false);
-                }
-                else
-                {
-                    hintedTiles.RemoveAt(index);
                 }
             }
 
@@ -2131,7 +2251,7 @@ namespace PokoPuzzle.Core
 
         private bool IsInside(int column, int row)
         {
-            return column >= 0 && column < width && row >= 0 && row < height;
+            return IsInsideBoard(column, row);
         }
 
         private bool IsInsideBoard(int column, int row)
@@ -2148,64 +2268,6 @@ namespace PokoPuzzle.Core
         private Vector3 GridToWorld(int column, int row)
         {
             return HexGridUtility.ToWorld(column, row, width, height, spacing, useHexGrid);
-        }
-
-        private void FramePlayCamera()
-        {
-            if (boardCamera == null || !boardCamera.orthographic)
-            {
-                return;
-            }
-
-            var boardHalfHeight = Mathf.Max(1f, (height - 1) * spacing * (useHexGrid ? HexGridUtility.VerticalSpacingRatio : 1f) * 0.5f);
-            var boardHalfWidth = Mathf.Max(1f, width * spacing * 0.5f);
-            var verticalSize = boardHalfHeight + 2.25f;
-            var horizontalSize = boardHalfWidth / Mathf.Max(0.5f, boardCamera.aspect) + 1.5f;
-            boardCamera.orthographicSize = Mathf.Max(boardCamera.orthographicSize, 5f, verticalSize, horizontalSize);
-
-            var cameraPosition = boardCamera.transform.position;
-            boardCamera.transform.position = new Vector3(cameraPosition.x, 0.72f, cameraPosition.z);
-        }
-
-        private void PrepareHud()
-        {
-            SetLegacyHudVisible(!useScreenHud);
-
-            var boardHalfHeight = Mathf.Max(1f, (height - 1) * spacing * (useHexGrid ? HexGridUtility.VerticalSpacingRatio : 1f) * 0.5f);
-            var boardHalfWidth = Mathf.Max(1f, width * spacing * 0.5f);
-            var left = -boardHalfWidth + 0.1f;
-            var top = boardHalfHeight + 0.85f;
-            var bottom = -boardHalfHeight - 0.55f;
-
-            if (scoreText != null)
-            {
-                scoreText.transform.position = new Vector3(left, top, 0f);
-            }
-
-            if (agentText != null)
-            {
-                agentText.transform.position = new Vector3(left, bottom, 0f);
-            }
-
-            if (feedbackText != null)
-            {
-                feedbackText.transform.position = new Vector3(0f, top + 0.15f, 0f);
-            }
-        }
-
-        private void SetLegacyHudVisible(bool visible)
-        {
-            SetTextMeshVisible(scoreText, visible);
-            SetTextMeshVisible(agentText, visible);
-            SetTextMeshVisible(feedbackText, visible);
-        }
-
-        private static void SetTextMeshVisible(TextMesh textMesh, bool visible)
-        {
-            if (textMesh != null && textMesh.TryGetComponent<MeshRenderer>(out var renderer))
-            {
-                renderer.enabled = visible;
-            }
         }
 
         private PokoTileType RandomType()
@@ -2325,7 +2387,7 @@ namespace PokoPuzzle.Core
                 {
                     var bossData = enemyDatabase.GetWave(wave);
                     var hp = ResolveEnemyHp(bossData?.Hp ?? 100, true, multiplier);
-                    enemy = new BoardEnemy(hp, bossData?.DefeatBonus ?? 500, bossData?.Name ?? $"Boss {wave}", wave);
+                    enemy = new BoardEnemy(hp, bossData?.DefeatBonus ?? 500, bossData?.Name ?? $"Boss {wave}", wave, bossData?.PortraitPath ?? string.Empty);
                 }
                 else
                 {
@@ -2335,6 +2397,7 @@ namespace PokoPuzzle.Core
                 hudRenderer.ShowFeedback($"BOSS - {enemy.Name}!", new Color(1f, 0.4f, 0.1f), 2f);
                 effectRenderer?.PlayBossSpawn(enemy.Name);
                 hudRenderer?.PlayBossPulse();
+                hudRenderer?.ShowPortraitIntro(enemy);
                 Debug.Log($"[LineLinkerBoard] Boss spawned: {enemy.Name} (HP {enemy.MaxHp}, spawn {enemySpawnIndex})");
 
                 bossCyclePtr++;
@@ -2358,7 +2421,7 @@ namespace PokoPuzzle.Core
                 {
                     var regData = regularEnemyDatabase.GetEnemy(enemyId);
                     var hp = ResolveEnemyHp(regData.Hp, false, multiplier);
-                    enemy = new BoardEnemy(hp, regData.ScoreBonus, regData.Name, 0);
+                    enemy = new BoardEnemy(hp, regData.ScoreBonus, regData.Name, 0, regData.PortraitPath ?? string.Empty);
                 }
                 else
                 {
@@ -2366,6 +2429,7 @@ namespace PokoPuzzle.Core
                 }
 
                 Debug.Log($"[LineLinkerBoard] Enemy spawned: {enemy.Name} (HP {enemy.MaxHp}, spawn {enemySpawnIndex})");
+                hudRenderer?.ShowPortraitIntro(enemy);
                 bossGroupStep++;
                 regularSpawnCount++;
             }

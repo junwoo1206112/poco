@@ -36,7 +36,8 @@ namespace PokoPuzzle.Editor
                         Wave = ParseInt(GetCellValue(row.GetCell(0))),
                         Name = GetCellValue(row.GetCell(1))?.Trim() ?? "Monster",
                         Hp = ParseInt(GetCellValue(row.GetCell(2))),
-                        DefeatBonus = ParseInt(GetCellValue(row.GetCell(3)))
+                        DefeatBonus = ParseInt(GetCellValue(row.GetCell(3))),
+                        PortraitPath = GetCellValue(row.GetCell(5))?.Trim() ?? string.Empty
                     };
 
                     if (wave.Wave > 0)
@@ -76,7 +77,8 @@ namespace PokoPuzzle.Editor
                         Name = GetCellValue(row.GetCell(1))?.Trim() ?? "Monster",
                         Hp = ParseInt(GetCellValue(row.GetCell(2))),
                         ScoreBonus = ParseInt(GetCellValue(row.GetCell(3))),
-                        Role = GetCellValue(row.GetCell(4))?.Trim() ?? "Normal"
+                        Role = GetCellValue(row.GetCell(4))?.Trim() ?? "Normal",
+                        PortraitPath = GetCellValue(row.GetCell(6))?.Trim() ?? string.Empty
                     };
 
                     if (enemy.EnemyId > 0)
@@ -191,6 +193,7 @@ namespace PokoPuzzle.Editor
             {
                 "freeze" => EnemySkillType.Freeze,
                 "stone" => EnemySkillType.Stone,
+                "petrify" or "petrified" => EnemySkillType.Petrify,
                 "colorswap" or "color_swap" or "swap" => EnemySkillType.ColorSwap,
                 _ => EnemySkillType.None
             };

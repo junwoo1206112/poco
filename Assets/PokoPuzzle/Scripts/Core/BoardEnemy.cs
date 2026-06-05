@@ -10,17 +10,19 @@ namespace PokoPuzzle.Core
         public int DefeatBonus { get; private set; }
         public int Wave { get; private set; }
         public string Name { get; private set; }
+        public string PortraitPath { get; private set; }
 
         private const int BaseMaxHp = 100;
         private const int BaseDefeatBonus = 500;
 
-        public BoardEnemy(int maxHp = BaseMaxHp, int defeatBonus = BaseDefeatBonus, string name = "Monster", int wave = 1)
+        public BoardEnemy(int maxHp = BaseMaxHp, int defeatBonus = BaseDefeatBonus, string name = "Monster", int wave = 1, string portraitPath = "")
         {
             MaxHp = maxHp > 0 ? maxHp : BaseMaxHp;
             CurrentHp = MaxHp;
             DefeatBonus = defeatBonus > 0 ? defeatBonus : BaseDefeatBonus;
             Name = name ?? "Monster";
             Wave = wave >= 0 ? wave : 1;
+            PortraitPath = portraitPath ?? string.Empty;
         }
 
         public int ApplyDamage(int damage)
@@ -35,12 +37,13 @@ namespace PokoPuzzle.Core
             return actualDamage;
         }
 
-        public void Reset(int? maxHp = null, int? defeatBonus = null, string name = null, int? wave = null)
+        public void Reset(int? maxHp = null, int? defeatBonus = null, string name = null, int? wave = null, string portraitPath = null)
         {
             Wave = wave.HasValue && wave.Value >= 0 ? wave.Value : 1;
             MaxHp = maxHp.HasValue && maxHp.Value > 0 ? maxHp.Value : BaseMaxHp;
             DefeatBonus = defeatBonus.HasValue && defeatBonus.Value > 0 ? defeatBonus.Value : BaseDefeatBonus;
             Name = name ?? "Monster";
+            PortraitPath = portraitPath ?? string.Empty;
             CurrentHp = MaxHp;
         }
 
