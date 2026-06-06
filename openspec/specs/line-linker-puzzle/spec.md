@@ -29,7 +29,7 @@ The system SHALL use odd-row offset hex coordinates for default board placement 
 
 ### Requirement: Same-type drag linking
 
-The system SHALL allow the player to drag across 6-direction adjacent same-type linkable tiles to build a chain. A chain SHALL commit irreversibly once it reaches 3 or more linked tiles, matching PokoPang one-stroke behavior.
+The system SHALL allow the player to drag across 6-direction adjacent same-type linkable tiles to build a preview chain. A chain SHALL commit when the player releases with 3 or more linked tiles, preserving readable drag preview behavior for the prototype.
 
 #### Scenario: Player links matching adjacent tiles
 
@@ -46,10 +46,10 @@ The system SHALL allow the player to drag across 6-direction adjacent same-type 
 - **WHEN** the player has 1-2 tiles in the active chain and drags back to the previous tile
 - **THEN** the last tile is removed from the active chain
 
-#### Scenario: Chain commits at 3
+#### Scenario: Chain commits on release
 
-- **WHEN** the active chain reaches 3 linked tiles
-- **THEN** the chain commits irreversibly and executes (clear, score, collapse, refill) without requiring finger-lift
+- **WHEN** the player releases an active chain with 3 or more linked tiles
+- **THEN** the chain commits irreversibly and executes clear, score, collapse, and refill
 
 #### Scenario: Player reads valid next tiles
 
@@ -64,7 +64,7 @@ The system SHALL allow the player to drag across 6-direction adjacent same-type 
 #### Scenario: Player detonates rainbow bomb
 
 - **WHEN** the player taps or starts dragging on a rainbow bomb
-- **THEN** the rainbow bomb detonates and removes every linkable tile of the most common color
+- **THEN** the rainbow bomb detonates and removes every linkable tile plus same-type Stone tile of the targeted color
 
 ### Requirement: Playable board availability
 

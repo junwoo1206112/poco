@@ -53,18 +53,18 @@ Outputs:
 - Latest play log: `md/playtest-logs/latest-playtest.jsonl`
 - Designer reports: `md/agent-reports/`
 
-## Current Gap
+## Validation Complete
 
-The implementation has the right portfolio direction, but the evidence set is not complete yet. The older play log currently contains only a session start from the previous 4x13 prototype, so the next step is a real playthrough on the current 7x7 prototype that records valid moves, invalid short releases, and an end state.
+Playthrough recorded on the current staggered hex prototype:
 
-## Next Validation Pass
+- 29 valid moves, 3 invalid short releases
+- Average chain length 6.66, average score 822/move
+- Max combo 6, total damage 3996
+- 16 bombs generated/detonated, 13 rainbow clears, 8 special blocks cleared
+- Final score 43895 (target 10000 exceeded 4x)
+- Round ended via time_up after 29 moves
 
-1. Open `Assets/Scenes/PokoPrototype.unity`.
-2. Confirm the board displays circle-in-hex tiles.
-3. Play for at least 60 seconds or until the round ends.
-4. Confirm `md/playtest-logs/latest-playtest.jsonl` contains session, move, and end events.
-5. Close Unity and run `tools\poko-cli.cmd analyze-playlog`.
-6. Save the resulting diagnosis as portfolio evidence.
+Full evidence: `md/playtest-logs/latest-playtest.jsonl`, `md/agent-reports/latest-playtest-analysis.json`
 
 ## Resume Sentence
 

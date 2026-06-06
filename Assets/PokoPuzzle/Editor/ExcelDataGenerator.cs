@@ -136,34 +136,34 @@ namespace PokoPuzzle.Editor
             WriteSheet(
                 workbook,
                 "Enemy",
-                new[] { "EnemyId", "Name", "HP", "ScoreBonus", "Role", "Enabled", "PortraitPath" },
+                new[] { "EnemyId", "Name", "HP", "ScoreBonus", "Role", "Enabled", "PortraitPath", "BackgroundPath" },
                 new[]
                 {
-                    new[] { "1", "Frostbinder Imp", "45", "50", "Normal", "TRUE", "EnemyPortraits/frostbinder_imp" },
-                    new[] { "2", "Rime Wisp", "60", "75", "Flying", "TRUE", "EnemyPortraits/rime_wisp" },
-                    new[] { "3", "Granite Mite", "50", "60", "Normal", "TRUE", "EnemyPortraits/granite_mite" },
-                    new[] { "4", "Crystal Guard", "75", "90", "Armored", "TRUE", "EnemyPortraits/crystal_guard" },
-                    new[] { "5", "Prism Bat", "70", "120", "Flying", "TRUE", "EnemyPortraits/prism_bat" },
-                    new[] { "6", "Chroma Shifter", "55", "55", "Dark", "TRUE", "EnemyPortraits/chroma_shifter" },
-                    new[] { "7", "Icebound Larva", "85", "85", "Normal", "TRUE", "EnemyPortraits/icebound_larva" },
-                    new[] { "8", "Stonehide Serpent", "40", "45", "Armored", "TRUE", "EnemyPortraits/stonehide_serpent" },
-                    new[] { "9", "Hue Imp", "70", "70", "Dark", "TRUE", "EnemyPortraits/hue_imp" },
-                    new[] { "10", "Chroma Wisp", "80", "110", "Flying", "TRUE", "EnemyPortraits/chroma_wisp" },
-                    new[] { "11", "Basalt Crawler", "85", "95", "Petrified", "TRUE", "EnemyPortraits/basalt_crawler" },
-                    new[] { "12", "Onyx Gargoyle", "110", "130", "Petrified", "TRUE", "EnemyPortraits/onyx_gargoyle" }
+                    new[] { "1", "Frostbinder Imp", "45", "50", "Normal", "TRUE", "EnemyPortraits/frostbinder_imp", "EnemyBackgrounds/frostbinder_imp" },
+                    new[] { "2", "Rime Wisp", "60", "75", "Flying", "TRUE", "EnemyPortraits/rime_wisp", "EnemyBackgrounds/rime_wisp" },
+                    new[] { "3", "Granite Mite", "50", "60", "Normal", "TRUE", "EnemyPortraits/granite_mite", "EnemyBackgrounds/granite_mite" },
+                    new[] { "4", "Crystal Guard", "75", "90", "Armored", "TRUE", "EnemyPortraits/crystal_guard", "EnemyBackgrounds/crystal_guard" },
+                    new[] { "5", "Prism Bat", "70", "120", "Flying", "TRUE", "EnemyPortraits/prism_bat", "EnemyBackgrounds/prism_bat" },
+                    new[] { "6", "Chroma Shifter", "55", "55", "Dark", "TRUE", "EnemyPortraits/chroma_shifter", "EnemyBackgrounds/chroma_shifter" },
+                    new[] { "7", "Icebound Larva", "85", "85", "Normal", "TRUE", "EnemyPortraits/icebound_larva", "EnemyBackgrounds/icebound_larva" },
+                    new[] { "8", "Stonehide Serpent", "40", "45", "Armored", "TRUE", "EnemyPortraits/stonehide_serpent", "EnemyBackgrounds/stonehide_serpent" },
+                    new[] { "9", "Hue Imp", "70", "70", "Dark", "TRUE", "EnemyPortraits/hue_imp", "EnemyBackgrounds/hue_imp" },
+                    new[] { "10", "Chroma Wisp", "80", "110", "Flying", "TRUE", "EnemyPortraits/chroma_wisp", "EnemyBackgrounds/chroma_wisp" },
+                    new[] { "11", "Basalt Crawler", "85", "95", "Petrified", "TRUE", "EnemyPortraits/basalt_crawler", "EnemyBackgrounds/basalt_crawler" },
+                    new[] { "12", "Onyx Gargoyle", "110", "130", "Petrified", "TRUE", "EnemyPortraits/onyx_gargoyle", "EnemyBackgrounds/onyx_gargoyle" }
                 });
             WriteSheet(
                 workbook,
                 "Boss",
-                new[] { "Wave", "Name", "HP", "DefeatBonus", "Enabled", "PortraitPath" },
+                new[] { "Wave", "Name", "HP", "DefeatBonus", "Enabled", "PortraitPath", "BackgroundPath" },
                 new[]
                 {
-                    new[] { "1", "Frostbind Queen", "240", "500", "TRUE", "EnemyPortraits/frostbind_queen" },
-                    new[] { "2", "Stoneheart Golem", "300", "550", "TRUE", "EnemyPortraits/stoneheart_golem" },
-                    new[] { "3", "Prism Trickster", "380", "600", "TRUE", "EnemyPortraits/prism_trickster" },
-                    new[] { "4", "Blizzard Wyrm", "480", "750", "TRUE", "EnemyPortraits/blizzard_wyrm" },
-                    new[] { "5", "Chroma Overlord", "650", "1000", "TRUE", "EnemyPortraits/chroma_overlord" },
-                    new[] { "6", "Obsidian Basilisk", "760", "1200", "TRUE", "EnemyPortraits/obsidian_basilisk" }
+                    new[] { "1", "Frostbind Queen", "240", "500", "TRUE", "EnemyPortraits/frostbind_queen", "EnemyBackgrounds/frostbind_queen" },
+                    new[] { "2", "Stoneheart Golem", "300", "550", "TRUE", "EnemyPortraits/stoneheart_golem", "EnemyBackgrounds/stoneheart_golem" },
+                    new[] { "3", "Prism Trickster", "380", "600", "TRUE", "EnemyPortraits/prism_trickster", "EnemyBackgrounds/prism_trickster" },
+                    new[] { "4", "Blizzard Wyrm", "480", "750", "TRUE", "EnemyPortraits/blizzard_wyrm", "EnemyBackgrounds/blizzard_wyrm" },
+                    new[] { "5", "Chroma Overlord", "650", "1000", "TRUE", "EnemyPortraits/chroma_overlord", "EnemyBackgrounds/chroma_overlord" },
+                    new[] { "6", "Obsidian Basilisk", "760", "1200", "TRUE", "EnemyPortraits/obsidian_basilisk", "EnemyBackgrounds/obsidian_basilisk" }
                 });
             WriteSheet(
                 workbook,
@@ -248,6 +248,7 @@ namespace PokoPuzzle.Editor
                 $"- Imported enemy skills: `{skillProvider.GetAllSkills().Count}`\n" +
                 $"- Imported balance profiles: `{profileProvider.GetAllProfiles().Count}`\n" +
                 "- Disabled rows are skipped when `Enabled` is `FALSE`, `0`, `NO`, `OFF`, or `DELETE`.\n" +
+                "- Enemy and boss background transitions load from each row's `BackgroundPath` Resources key.\n" +
                 "- Deleted Excel rows disappear from the generated databases on the next conversion.\n";
 
             File.WriteAllText(Path.Combine(ReportDir, "excel-data-conversion.md"), body);

@@ -13,6 +13,7 @@ namespace PokoPuzzle.Core
         private static Sprite rainbowSprite;
         private static Sprite statusOverlaySprite;
         private static Sprite petrifiedOverlaySprite;
+        private static Sprite stoneOverlaySprite;
         private static Sprite redBombSprite;
         private static Sprite blueBombSprite;
 
@@ -34,6 +35,7 @@ namespace PokoPuzzle.Core
         private bool hinted;
         private bool clearing;
         private SpriteRenderer statusOverlay;
+        private Coroutine dropRoutine;
         private const float BombAutoDetonateTime = 5f;
         private static readonly Color FrozenTint = new Color(0.88f, 0.96f, 1f, 1f);
         private static readonly Color StoneTint = new Color(0.72f, 0.72f, 0.72f, 1f);
@@ -133,18 +135,6 @@ namespace PokoPuzzle.Core
             }
         }
 
-        public bool DamageStone()
-        {
-            if (!IsStone)
-            {
-                return false;
-            }
-
-            BlockHitPoints = Mathf.Max(0, BlockHitPoints - 1);
-            ApplyVisual();
-            return BlockHitPoints == 0;
-        }
-
         public bool TickBombTimer(float deltaTime)
         {
             if (!IsBomb || bombTimer < 0f)
@@ -183,6 +173,7 @@ namespace PokoPuzzle.Core
             clearing = true;
             selected = false;
             hinted = false;
+            StopDropAnimation();
             if (hexCollider != null)
             {
                 hexCollider.enabled = false;
@@ -232,11 +223,13 @@ namespace PokoPuzzle.Core
                 return;
             }
 
-            StartCoroutine(AnimateDropCoroutine(targetPosition, height, delay));
+            StopDropAnimation();
+            dropRoutine = StartCoroutine(AnimateDropCoroutine(targetPosition, height, delay));
         }
 
         private IEnumerator AnimateDropCoroutine(Vector3 targetPosition, float height, float delay)
         {
+            yield return null;
             var startPosition = new Vector3(targetPosition.x, targetPosition.y + height, targetPosition.z);
             transform.position = startPosition;
             yield return new WaitForSeconds(delay);
@@ -253,6 +246,7 @@ namespace PokoPuzzle.Core
             }
 
             transform.position = targetPosition;
+            dropRoutine = null;
         }
 
         public void PlayRainbowTargetPulse(Color targetColor, float duration, float delay)
@@ -283,10 +277,22 @@ namespace PokoPuzzle.Core
 
         public void SetGridPosition(int column, int row, Vector3 worldPosition)
         {
+            StopDropAnimation();
             Column = column;
             Row = row;
             transform.position = worldPosition;
             name = $"Tile_{column}_{row}_{Type}";
+        }
+
+        private void StopDropAnimation()
+        {
+            if (dropRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(dropRoutine);
+            dropRoutine = null;
         }
 
         public void SetType(PokoTileType type)
@@ -306,6 +312,55 @@ namespace PokoPuzzle.Core
 
             ApplyVisual();
             name = $"Tile_{Column}_{Row}_{Type}";
+        }
+
+        public void RefreshBoardVisual(Sprite sprite)
+        {
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = GetComponent<SpriteRenderer>();
+            }
+
+            if (hexCollider == null)
+            {
+                hexCollider = GetComponent<PolygonCollider2D>();
+            }
+
+            if (!gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+            }
+
+            if (hexCollider != null)
+            {
+                hexCollider.enabled = true;
+            }
+
+            if (spriteRenderer != null && spriteRenderer.sprite == null && sprite != null)
+            {
+                spriteRenderer.sprite = sprite;
+            }
+
+            EnsureStatusOverlay();
+            if (IsBomb)
+            {
+                if (BombType == BombType.Rainbow)
+                {
+                    spriteRenderer.sprite = GetOrCreateRainbowSprite();
+                    spriteRenderer.color = Color.white;
+                    spriteRenderer.sortingOrder = 3;
+                    HideStatusOverlay();
+                }
+                else
+                {
+                    spriteRenderer.sprite = GetOrCreateBombSprite(BombType);
+                    ApplyBombVisual();
+                }
+
+                return;
+            }
+
+            ApplyVisual();
         }
 
         public void SetSelected(bool selected)
@@ -391,9 +446,9 @@ namespace PokoPuzzle.Core
             }
             else if (IsStone)
             {
-                var tintWeight = BlockHitPoints <= 1 ? 0.24f : 0.36f;
+                var tintWeight = BlockHitPoints <= 1 ? 0.38f : 0.48f;
                 color = Color.Lerp(color, StoneTint, tintWeight);
-                ApplyStatusOverlay(new Color(0.24f, 0.24f, 0.24f, 0.76f), 1.05f, 3);
+                ApplyStatusOverlay(GetOrCreateStoneOverlaySprite(), new Color(0.82f, 0.82f, 0.86f, 0.92f), 1.12f, 5);
             }
             else if (IsPetrified)
             {
@@ -743,6 +798,60 @@ namespace PokoPuzzle.Core
             texture.Apply();
             petrifiedOverlaySprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
             return petrifiedOverlaySprite;
+        }
+
+        private static Sprite GetOrCreateStoneOverlaySprite()
+        {
+            if (stoneOverlaySprite != null)
+            {
+                return stoneOverlaySprite;
+            }
+
+            const int size = 96;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var center = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+            var outerRadius = size * 0.45f;
+            var midRadius = size * 0.39f;
+            var innerRadius = size * 0.22f;
+            var outer = new Vector2[6];
+            var mid = new Vector2[6];
+            var inner = new Vector2[6];
+
+            for (var index = 0; index < 6; index++)
+            {
+                var angle = Mathf.Deg2Rad * (60f * index + 30f);
+                var cos = Mathf.Cos(angle);
+                var sin = Mathf.Sin(angle);
+                outer[index] = new Vector2(center.x + outerRadius * cos, center.y + outerRadius * sin);
+                mid[index] = new Vector2(center.x + midRadius * cos, center.y + midRadius * sin);
+                inner[index] = new Vector2(center.x + innerRadius * cos, center.y + innerRadius * sin);
+            }
+
+            var crackA = new Vector2(center.x - size * 0.24f, center.y + size * 0.08f);
+            var crackB = new Vector2(center.x - size * 0.04f, center.y - size * 0.08f);
+            var crackC = new Vector2(center.x + size * 0.22f, center.y + size * 0.16f);
+            var crackD = new Vector2(center.x + size * 0.16f, center.y - size * 0.25f);
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var point = new Vector2(x, y);
+                    var inOuter = IsInsideHex(point, outer);
+                    var inMid = IsInsideHex(point, mid);
+                    var inInner = IsInsideHex(point, inner);
+                    var border = inOuter && !inMid;
+                    var core = inInner && ((x + y) % 11 < 6);
+                    var crack = DistanceToSegment(point, crackA, crackB) <= 2.4f ||
+                        DistanceToSegment(point, crackB, crackC) <= 2.2f ||
+                        DistanceToSegment(point, crackB, crackD) <= 2.1f;
+                    texture.SetPixel(x, y, border || core || crack ? Color.white : new Color(0f, 0f, 0f, 0f));
+                }
+            }
+
+            texture.Apply();
+            stoneOverlaySprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+            return stoneOverlaySprite;
         }
 
         private static Sprite CreateRainbowGradient()

@@ -11,7 +11,7 @@ The project is still directionally strong as a Unity casual puzzle portfolio:
 
 The strongest portfolio sentence is:
 
-> A reviewer can play a compact 4x13 hex Line-Linker board, then inspect how the local designer agent reads play logs and proposes level tuning.
+> A reviewer can play a compact staggered hex Line-Linker board, then inspect how the local designer agent reads play logs and proposes level tuning.
 
 ## What Is Aligned
 
@@ -43,7 +43,7 @@ Decision: keep release-committed chain execution for this portfolio slice. This 
 
 5. Rainbow behavior update
 
-Rainbow moved from wildcard link tiles to the PokoPang-style rainbow bomb model: block clears fill a gauge, the gauge creates a Rainbow bomb, and detonating that bomb removes all linkable tiles of the most common color.
+Rainbow moved from wildcard link tiles to the PokoPang-style rainbow bomb model: block clears fill a gauge, the gauge creates a Rainbow bomb, and detonating that bomb removes linkable tiles plus same-type Stone tiles of the targeted color while Petrified remains immune.
 
 ## Changes Made In This Audit
 
@@ -63,8 +63,4 @@ tools\poko-cli.cmd analyze-playlog --logPath md/playtest-logs/latest-playtest.js
 tools\poko-cli.cmd designer-loop-status --reportPath md/designer-loop/latest-status.md
 ```
 
-2. Reconcile `poko-core-mechanics/tasks.md` after play verification.
-
-3. Track the Unity-generated `.meta` files that correspond to tracked scripts/tests, or intentionally remove the source files and their metas together if those files are obsolete.
-
-4. Capture a short portfolio milestone only after the evidence files include one full-round play log with an `end` event.
+2. Capture a short portfolio milestone only after the evidence files include one full-round play log with an `end` event.

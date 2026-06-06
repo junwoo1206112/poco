@@ -20,12 +20,13 @@ The system SHALL support Rainbow as a separate bomb reward, independent from the
 
 ### Requirement: Rainbow bomb detonation
 
-The system SHALL make a Rainbow bomb remove all linkable tiles of the most common color on the board.
+The system SHALL make a Rainbow bomb remove all linkable tiles and same-type Stone tiles of the most common removable color on the board. Petrified tiles SHALL remain immune.
 
 #### Scenario: Player detonates rainbow bomb
 
 - **WHEN** the player detonates a Rainbow bomb
-- **THEN** the board identifies the most common linkable tile type and removes every linkable tile of that type
+- **THEN** the board identifies the most common removable tile type from linkable and Stone tiles
+- **AND** removes every linkable tile and same-type Stone tile of that type
 - **AND** the clear is presented as a visible detonation from the Rainbow bomb into the targeted color tiles
 
 #### Scenario: Rainbow bomb scores

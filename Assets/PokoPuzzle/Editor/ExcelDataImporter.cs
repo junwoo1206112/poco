@@ -37,7 +37,8 @@ namespace PokoPuzzle.Editor
                         Name = GetCellValue(row.GetCell(1))?.Trim() ?? "Monster",
                         Hp = ParseInt(GetCellValue(row.GetCell(2))),
                         DefeatBonus = ParseInt(GetCellValue(row.GetCell(3))),
-                        PortraitPath = GetCellValue(row.GetCell(5))?.Trim() ?? string.Empty
+                        PortraitPath = GetCellValue(row.GetCell(5))?.Trim() ?? string.Empty,
+                        BackgroundPath = GetCellValue(row.GetCell(6))?.Trim() ?? string.Empty
                     };
 
                     if (wave.Wave > 0)
@@ -78,7 +79,8 @@ namespace PokoPuzzle.Editor
                         Hp = ParseInt(GetCellValue(row.GetCell(2))),
                         ScoreBonus = ParseInt(GetCellValue(row.GetCell(3))),
                         Role = GetCellValue(row.GetCell(4))?.Trim() ?? "Normal",
-                        PortraitPath = GetCellValue(row.GetCell(6))?.Trim() ?? string.Empty
+                        PortraitPath = GetCellValue(row.GetCell(6))?.Trim() ?? string.Empty,
+                        BackgroundPath = GetCellValue(row.GetCell(7))?.Trim() ?? string.Empty
                     };
 
                     if (enemy.EnemyId > 0)
@@ -283,7 +285,7 @@ namespace PokoPuzzle.Editor
 
                 return waves.Count > 0
                     ? waves[^1]
-                    : new EnemyWaveData { Wave = wave, Hp = 100, DefeatBonus = 500 };
+                    : new EnemyWaveData { Wave = wave, Hp = 100, DefeatBonus = 500, BackgroundPath = string.Empty };
             }
         }
 
@@ -308,7 +310,7 @@ namespace PokoPuzzle.Editor
 
                 return enemies.Count > 0
                     ? enemies[0]
-                    : new RegularEnemyData { EnemyId = enemyId, Name = "Monster", Hp = 30, ScoreBonus = 50, Role = "Normal" };
+                    : new RegularEnemyData { EnemyId = enemyId, Name = "Monster", Hp = 30, ScoreBonus = 50, Role = "Normal", BackgroundPath = string.Empty };
             }
 
             public IReadOnlyList<RegularEnemyData> GetAllEnemies()

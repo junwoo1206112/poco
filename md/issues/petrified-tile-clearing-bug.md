@@ -1,7 +1,7 @@
 # Petrified Tile Clearing Bug
 
 ## Status
-**Open** - Petrified tiles do not clear when reaching the bottom of the board.
+**Fixed** - Petrified tiles now clear when they settle on the true bottom row of their column.
 
 ## Problem Description
 Petrified (석화) tiles are applied to random tiles via the enemy Petrify skill. When these tiles fall to the bottom of the board, they should be cleared automatically, granting +40 score and dealing 1 damage to the enemy. However, Petrified tiles remain on the board indefinitely.
@@ -12,11 +12,11 @@ Petrified (석화) tiles are applied to random tiles via the enemy Petrify skill
 1. Petrified tiles are created via `ApplyPetrifySkill()` → `tile.ConfigureSubtype(PokoBlockSubtype.Petrified)`
 2. `CollapseAndRefill()` calls `CompactColumns(false)` which moves all movable tiles (including Petrified) downward
 3. `ClearBottomPetrifiedBlocks()` is called in a while loop to clear Petrified tiles at the bottom
-4. **Bug**: Petrified tiles are treated as movable tiles in `CompactColumns()`, so they get mixed into segments with other tiles
-5. When a Petrified tile is in the middle of a segment (not at the bottom row), it never reaches the bottom because other tiles are below it
+4. **Bug**: `ClearBottomPetrifiedBlocks()` checked `row + 1` as though that direction were below the tile.
+5. In this board, lower rows are closer to `row 0`, so a petrified tile on the true bottom row could be rejected when ordinary tiles were above it.
 
 ### Key Finding
-The `ClearBottomPetrifiedBlocks()` method checks if a Petrified tile is at the bottom by scanning rows below it. If any movable tile exists below the Petrified tile, `isAtBottom = false` and the tile is not cleared. Since Petrified is a movable tile itself, it gets placed in the middle of segments during compaction, preventing it from ever reaching the true bottom.
+The `ClearBottomPetrifiedBlocks()` method checked the wrong row direction. `CompactColumns()` writes movable tiles from the lowest valid row upward, so the bottom check must scan toward lower row indices.
 
 ### Log Evidence
 ```
@@ -40,33 +40,11 @@ Kept Petrified as movable, added bottom-check logic in `ClearBottomPetrifiedBloc
 ### Attempt 3: Immediate Clear on Discovery
 Modified `ClearBottomPetrifiedBlocks()` to clear any Petrified tile found, regardless of position. This would work but may not match the intended game design (Petrified should fall to bottom first).
 
-## Design Decision Needed
+## Fix
 
-**Question**: Should Petrified tiles:
-1. **Fall to bottom then clear** (current intended behavior, but buggy)
-2. **Clear immediately when Petrify skill is applied** (simpler, no falling)
-3. **Clear after N turns** (timer-based)
-4. **Clear when any adjacent tile is matched** (reactive)
+The runtime now uses `IsPetrifiedAtBottom()` to scan toward `row - 1`, skipping invalid hex rows. A petrified tile clears only when there is no valid row below it, or when a fixed blocker forms the bottom of that compacted segment.
 
-## Recommended Fix
-
-Option 1 (fall to bottom then clear) requires Petrified to be treated as a fixed obstacle during compaction BUT still be checked for clearing after compaction settles. The fix should:
-
-1. Keep Petrified as a fixed obstacle in `IsFixedObstacle()`
-2. After `CompactColumns()` settles, check ALL Petrified tiles (not just bottom row)
-3. Clear Petrified tiles that cannot fall further (no empty space below them)
-
-```csharp
-// In ClearBottomPetrifiedBlocks():
-// Instead of checking only the bottom row, check if there's any empty space below
-var canFallFurther = false;
-for (var belowRow = row + 1; belowRow < height; belowRow++)
-{
-    if (!IsInsideBoard(column, belowRow)) continue;
-    if (tiles[column, belowRow] == null) { canFallFurther = true; break; }
-}
-if (!canFallFurther) { /* clear the petrified tile */ }
-```
+Regression coverage was added for the case where a petrified tile is on row 0 while ordinary tiles are above it.
 
 ## Files Involved
 - `Assets/PokoPuzzle/Scripts/Core/LineLinkerBoard.cs` - `CollapseAndRefill()`, `ClearBottomPetrifiedBlocks()`, `CompactColumns()`, `IsFixedObstacle()`

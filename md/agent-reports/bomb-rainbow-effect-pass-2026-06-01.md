@@ -30,7 +30,7 @@
 - Blue bomb affected tiles should visibly travel into the bomb center so the player can read the local implosion before the board refills.
 - Balance contrast: Blue has a compact local radius and loses value near the edge; Red uses board-boundary line clears and therefore feels like the screen-sweeping joker.
 - Rainbow bomb should not read as a radius or line effect; it should read as a full-board one-color clear with every matching tile visibly selected before disappearing.
-- The implementation keeps the current rules: Rainbow targets the most common linkable color, Red bomb uses 6 hex directions, and Blue bomb uses the origin-adjacent 2-ring hex burst area.
+- The implementation keeps the current rules: Rainbow targets the most common removable color across linkable and Stone tiles, Petrified stays immune, Red bomb uses 6 hex directions, and Blue bomb uses the origin-adjacent 2-ring hex burst area.
 
 ## Verification
 

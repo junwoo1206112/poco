@@ -15,4 +15,5 @@
 - Imported enemy skills: `6`
 - Imported balance profiles: `4`
 - Disabled rows are skipped when `Enabled` is `FALSE`, `0`, `NO`, `OFF`, or `DELETE`.
+- Enemy and boss background transitions load from each row's `BackgroundPath` Resources key.
 - Deleted Excel rows disappear from the generated databases on the next conversion.

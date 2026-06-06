@@ -199,7 +199,83 @@ namespace Tests
         }
 
         [Test]
-        public void ClearMatchedTiles_DamagesAdjacentStoneButSkipsPetrified()
+        public void CollapseAndRefill_ClearsBottomPetrifiedEvenWhenTilesAreAboveIt()
+        {
+            var board = CreateBoard(out _);
+            var petrified = CreateTile(new Vector3(0f, 0f, 0f));
+            var upperTile = CreateTile(new Vector3(0f, 1f, 0f));
+            petrified.ConfigureSubtype(PokoBlockSubtype.Petrified);
+            SetField(board, "width", 1);
+            SetField(board, "height", 3);
+            SetField(board, "useHexGrid", false);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+            SetField(board, "tiles", new[,] { { petrified, upperTile, null } });
+
+            InvokeCollapseAndRefill(board);
+
+            var tiles = (PokoTile[,])GetField(board, "tiles");
+            for (var row = 0; row < 3; row++)
+            {
+                Assert.AreNotSame(petrified, tiles[0, row]);
+                Assert.IsNotNull(tiles[0, row]);
+            }
+
+            Assert.AreEqual(40, GetField(board, "score"));
+        }
+
+        [Test]
+        public void CollapseAndRefill_FillsHexBoardAfterBottomPetrifiedClears()
+        {
+            var board = CreateBoard(out _);
+            var petrified = CreateTile(new Vector3(0f, 0f, 0f));
+            petrified.ConfigureSubtype(PokoBlockSubtype.Petrified);
+            SetField(board, "width", 4);
+            SetField(board, "height", 9);
+            SetField(board, "useHexGrid", true);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+
+            var tiles = new PokoTile[4, 9];
+            for (var column = 0; column < 4; column++)
+            {
+                for (var row = 0; row < 9; row++)
+                {
+                    if (!IsInsideHexTestBoard(column, row))
+                    {
+                        continue;
+                    }
+
+                    var tile = column == 3 && row == 1
+                        ? petrified
+                        : CreateTile(new Vector3(column, row, 0f));
+                    tile.SetGridPosition(column, row, tile.transform.position);
+                    tiles[column, row] = tile;
+                }
+            }
+
+            SetField(board, "tiles", tiles);
+
+            InvokeCollapseAndRefill(board);
+
+            tiles = (PokoTile[,])GetField(board, "tiles");
+            for (var column = 0; column < 4; column++)
+            {
+                for (var row = 0; row < 9; row++)
+                {
+                    if (IsInsideHexTestBoard(column, row))
+                    {
+                        Assert.IsNotNull(tiles[column, row], $"Cell {column},{row} should be filled");
+                        Assert.AreNotSame(petrified, tiles[column, row]);
+                    }
+                }
+            }
+
+            Assert.AreEqual(40, GetField(board, "score"));
+        }
+
+        [Test]
+        public void ClearMatchedTiles_SkipsAdjacentStoneAndPetrified()
         {
             var board = CreateBoard(out _);
             var matchedTile = CreateTile(new Vector3(0f, 0f, 0f));
@@ -217,8 +293,222 @@ namespace Tests
 
             var tiles = (PokoTile[,])GetField(board, "tiles");
             Assert.AreSame(stone, tiles[1, 0]);
-            Assert.AreEqual(1, stone.BlockHitPoints);
+            Assert.AreEqual(2, stone.BlockHitPoints);
             Assert.AreSame(petrified, tiles[2, 0]);
+        }
+
+        [Test]
+        public void ResolveRainbowClear_ClearsMatchingStone()
+        {
+            var board = CreateBoard(out _);
+            var redTile = CreateTile(new Vector3(0f, 0f, 0f));
+            var stone = CreateTile(new Vector3(1f, 0f, 0f));
+            stone.ConfigureSubtype(PokoBlockSubtype.Stone, 2);
+            SetField(board, "width", 2);
+            SetField(board, "height", 1);
+            SetField(board, "useHexGrid", false);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+            SetField(board, "tiles", new[,] { { redTile }, { stone } });
+
+            var routine = InvokeResolveRainbowClear(board, PokoTileType.Red, Vector3.zero);
+            Assert.IsTrue(routine.MoveNext());
+            while (routine.MoveNext())
+            {
+            }
+
+            var tiles = (PokoTile[,])GetField(board, "tiles");
+            Assert.AreNotSame(stone, tiles[0, 0]);
+            Assert.AreNotSame(stone, tiles[1, 0]);
+            Assert.AreEqual(100, GetField(board, "score"));
+        }
+
+        [Test]
+        public void VerifyBoardIntegrity_RepairsEmptyPlayableCells()
+        {
+            var board = CreateBoard(out _);
+            var tile = CreateTile(new Vector3(0f, 0f, 0f));
+            SetField(board, "width", 2);
+            SetField(board, "height", 2);
+            SetField(board, "useHexGrid", false);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+            SetField(board, "tiles", new[,] { { tile, null }, { null, null } });
+
+            InvokeVerifyBoardIntegrity(board);
+
+            var tiles = (PokoTile[,])GetField(board, "tiles");
+            for (var column = 0; column < 2; column++)
+            {
+                for (var row = 0; row < 2; row++)
+                {
+                    Assert.IsNotNull(tiles[column, row], $"Cell {column},{row} should be repaired");
+                }
+            }
+        }
+
+        [Test]
+        public void VerifyBoardIntegrity_ReplacesClearingPlayableCells()
+        {
+            var board = CreateBoard(out _);
+            var clearingTile = CreateTile(new Vector3(0f, 0f, 0f));
+            clearingTile.PlayClearAndDestroy();
+            SetField(board, "width", 1);
+            SetField(board, "height", 1);
+            SetField(board, "useHexGrid", false);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+            SetField(board, "tiles", new[,] { { clearingTile } });
+
+            InvokeVerifyBoardIntegrity(board);
+
+            var tiles = (PokoTile[,])GetField(board, "tiles");
+            Assert.IsNotNull(tiles[0, 0]);
+            Assert.AreNotSame(clearingTile, tiles[0, 0]);
+            Assert.IsFalse(tiles[0, 0].IsClearing);
+        }
+
+        [Test]
+        public void VerifyBoardIntegrity_SnapsVisuallyMisplacedTile()
+        {
+            var board = CreateBoard(out _);
+            var tile = CreateTile(new Vector3(0f, 5f, 0f));
+            tile.SetGridPosition(0, 0, new Vector3(0f, 5f, 0f));
+            SetField(board, "width", 1);
+            SetField(board, "height", 1);
+            SetField(board, "useHexGrid", false);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+            SetField(board, "tiles", new[,] { { tile } });
+
+            InvokeVerifyBoardIntegrity(board);
+
+            Assert.AreEqual(Vector3.zero, tile.transform.position);
+        }
+
+        [Test]
+        public void SetGridPosition_CancelsPendingDropAnimation()
+        {
+            var tile = CreateTile(Vector3.zero);
+            tile.AnimateDrop(Vector3.zero, 3f, 0f);
+
+            tile.SetGridPosition(0, 0, Vector3.zero);
+
+            Assert.AreEqual(Vector3.zero, tile.transform.position);
+        }
+
+        [Test]
+        public void CollapseAndRefill_FillsGapsAroundFixedSpecialBlockers()
+        {
+            var board = CreateBoard(out _);
+            var lowerTile = CreateTile(new Vector3(0f, 1f, 0f));
+            var stone = CreateTile(new Vector3(0f, 2f, 0f));
+            var upperTile = CreateTile(new Vector3(0f, 4f, 0f));
+            stone.ConfigureSubtype(PokoBlockSubtype.Stone, 2);
+            SetField(board, "width", 1);
+            SetField(board, "height", 5);
+            SetField(board, "useHexGrid", false);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+            SetField(board, "tiles", new[,] { { null, lowerTile, stone, null, upperTile } });
+
+            InvokeCollapseAndRefill(board);
+
+            var tiles = (PokoTile[,])GetField(board, "tiles");
+            for (var row = 0; row < 5; row++)
+            {
+                Assert.IsNotNull(tiles[0, row], $"Row {row} should be filled");
+            }
+
+            Assert.AreSame(stone, tiles[0, 2]);
+        }
+
+        [Test]
+        public void CollapseAndRefill_RepairsHexBoardWithMixedSpecialGaps()
+        {
+            var board = CreateBoard(out _);
+            SetField(board, "width", 4);
+            SetField(board, "height", 9);
+            SetField(board, "useHexGrid", true);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+
+            var tiles = new PokoTile[4, 9];
+            for (var column = 0; column < 4; column++)
+            {
+                for (var row = 0; row < 9; row++)
+                {
+                    if (!IsInsideHexTestBoard(column, row))
+                    {
+                        continue;
+                    }
+
+                    if ((column == 0 && row == 1) || (column == 2 && row == 5) || (column == 3 && row == 7))
+                    {
+                        continue;
+                    }
+
+                    var tile = CreateTile(new Vector3(column, row, 0f));
+                    tile.SetGridPosition(column, row, tile.transform.position);
+                    if (column == 1 && row == 3)
+                    {
+                        tile.ConfigureSubtype(PokoBlockSubtype.Frozen);
+                    }
+                    else if (column == 2 && row == 4)
+                    {
+                        tile.ConfigureSubtype(PokoBlockSubtype.Stone, 2);
+                    }
+                    else if (column == 3 && row == 1)
+                    {
+                        tile.ConfigureSubtype(PokoBlockSubtype.Petrified);
+                    }
+
+                    tiles[column, row] = tile;
+                }
+            }
+
+            SetField(board, "tiles", tiles);
+
+            InvokeCollapseAndRefill(board);
+
+            tiles = (PokoTile[,])GetField(board, "tiles");
+            for (var column = 0; column < 4; column++)
+            {
+                for (var row = 0; row < 9; row++)
+                {
+                    if (IsInsideHexTestBoard(column, row))
+                    {
+                        Assert.IsNotNull(tiles[column, row], $"Cell {column},{row} should be filled");
+                        Assert.IsFalse(tiles[column, row].IsClearing, $"Cell {column},{row} should not contain a clearing tile");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void ClearFrozenTilesAdjacentTo_OnlyUsesActualClearedCells()
+        {
+            var board = CreateBoard(out _);
+            var unrelatedFrozen = CreateTile(new Vector3(0f, 1f, 0f));
+            var adjacentFrozen = CreateTile(new Vector3(1f, 0f, 0f));
+            unrelatedFrozen.ConfigureSubtype(PokoBlockSubtype.Frozen);
+            adjacentFrozen.ConfigureSubtype(PokoBlockSubtype.Frozen);
+            SetField(board, "width", 3);
+            SetField(board, "height", 2);
+            SetField(board, "useHexGrid", false);
+            SetField(board, "spacing", 1f);
+            SetField(board, "tileTypes", 1);
+            SetField(board, "tiles", new[,]
+            {
+                { null, null },
+                { adjacentFrozen, null },
+                { null, unrelatedFrozen }
+            });
+
+            InvokeClearFrozenTilesAdjacentTo(board, new List<Vector2Int> { new(0, 0) });
+
+            Assert.IsTrue(unrelatedFrozen.IsFrozen);
+            Assert.IsFalse(adjacentFrozen.IsFrozen);
         }
 
         private LineLinkerBoard CreateBoard(out Camera camera)
@@ -324,6 +614,27 @@ namespace Tests
                 .Invoke(board, new object[] { column, row, bombType, bombPosition });
         }
 
+        private static IEnumerator InvokeResolveRainbowClear(LineLinkerBoard board, PokoTileType targetType, Vector3 bombPosition)
+        {
+            return (IEnumerator)typeof(LineLinkerBoard)
+                .GetMethod("ResolveRainbowClear", PrivateInstance)
+                .Invoke(board, new object[] { targetType, bombPosition });
+        }
+
+        private static void InvokeVerifyBoardIntegrity(LineLinkerBoard board)
+        {
+            typeof(LineLinkerBoard)
+                .GetMethod("VerifyBoardIntegrity", PrivateInstance)
+                .Invoke(board, new object[0]);
+        }
+
+        private static void InvokeClearFrozenTilesAdjacentTo(LineLinkerBoard board, IReadOnlyList<Vector2Int> clearedCells)
+        {
+            typeof(LineLinkerBoard)
+                .GetMethod("ClearFrozenTilesAdjacentTo", PrivateInstance)
+                .Invoke(board, new object[] { clearedCells });
+        }
+
         private static object GetField(object target, string fieldName)
         {
             return target.GetType().GetField(fieldName, PrivateInstance).GetValue(target);
@@ -332,6 +643,11 @@ namespace Tests
         private static void SetField(object target, string fieldName, object value)
         {
             target.GetType().GetField(fieldName, PrivateInstance).SetValue(target, value);
+        }
+
+        private static bool IsInsideHexTestBoard(int column, int row)
+        {
+            return row >= 0 && row < 9 && column >= 0 && column < HexGridUtility.RowSize(row, 4);
         }
     }
 }

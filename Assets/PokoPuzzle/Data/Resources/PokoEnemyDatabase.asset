@@ -18,28 +18,34 @@ MonoBehaviour:
     Hp: 240
     DefeatBonus: 500
     PortraitPath: EnemyPortraits/frostbind_queen
+    BackgroundPath: EnemyBackgrounds/frostbind_queen
   - Wave: 2
     Name: Stoneheart Golem
     Hp: 300
     DefeatBonus: 550
     PortraitPath: EnemyPortraits/stoneheart_golem
+    BackgroundPath: EnemyBackgrounds/stoneheart_golem
   - Wave: 3
     Name: Prism Trickster
     Hp: 380
     DefeatBonus: 600
     PortraitPath: EnemyPortraits/prism_trickster
+    BackgroundPath: EnemyBackgrounds/prism_trickster
   - Wave: 4
     Name: Blizzard Wyrm
     Hp: 480
     DefeatBonus: 750
     PortraitPath: EnemyPortraits/blizzard_wyrm
+    BackgroundPath: EnemyBackgrounds/blizzard_wyrm
   - Wave: 5
     Name: Chroma Overlord
     Hp: 650
     DefeatBonus: 1000
     PortraitPath: EnemyPortraits/chroma_overlord
+    BackgroundPath: EnemyBackgrounds/chroma_overlord
   - Wave: 6
     Name: Obsidian Basilisk
     Hp: 760
     DefeatBonus: 1200
     PortraitPath: EnemyPortraits/obsidian_basilisk
+    BackgroundPath: EnemyBackgrounds/obsidian_basilisk

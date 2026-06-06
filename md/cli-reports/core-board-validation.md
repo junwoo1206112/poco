@@ -4,10 +4,11 @@
 
 - Status: `PASS`
 - Scene path: `Assets/Scenes/PokoPrototype.unity`
-- Board size: `7x7`
+- Board size: `4x9`
 - Tile types: `5`
-- Tile spacing: `0.95`
+- Tile spacing: `0.85`
 - Layout: `hex`
+- Tile visual: `hex`
 - Neighbor directions: `6`
 
 ## Checks

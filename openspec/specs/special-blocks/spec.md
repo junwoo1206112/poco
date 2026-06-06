@@ -20,11 +20,16 @@ The system SHALL support Frozen, Stone, and Petrified block subtypes that appear
 - **THEN** the Stone block is destroyed immediately
 - **AND** the clear scores 50 points
 
-#### Scenario: Stone block is damaged by adjacent matching
+#### Scenario: Stone block resists adjacent matching
 
 - **WHEN** any tile adjacent to a Stone block is cleared by a normal chain
-- **THEN** the Stone block loses durability
-- **AND** the Stone block is destroyed only when durability reaches 0
+- **THEN** the Stone block is not damaged or cleared
+
+#### Scenario: Stone block is destroyed by rainbow
+
+- **WHEN** a Rainbow bomb targets the Stone block's tile type
+- **THEN** the Stone block is destroyed immediately
+- **AND** the clear scores 50 points
 
 #### Scenario: Petrified block resists normal removal
 

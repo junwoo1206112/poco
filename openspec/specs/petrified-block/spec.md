@@ -30,7 +30,7 @@ The system SHALL support a Petrified block subtype that cannot be linked, cannot
 
 - **WHEN** a Rainbow Bomb detonates and targets a color that includes Petrified blocks of that color
 - **THEN** the Petrified blocks SHALL NOT be cleared
-- **AND** only linkable tiles of the target color SHALL be removed
+- **AND** only linkable tiles and same-type Stone tiles of the target color SHALL be removed
 
 #### Scenario: Petrified block clears at bottom row
 

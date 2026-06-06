@@ -38,8 +38,9 @@ The current round format follows a Poko-style 60-second score attack: the player
 ### Special Blocks
 
 - Frozen Block: cannot be linked; clears when an adjacent tile is destroyed.
-- Stone Block: cannot be linked; falls to bottom and auto-clears.
-- Clock Block: adds +2 seconds when cleared.
+- Stone Block: cannot be linked; resists adjacent chain clears, and is destroyed only by Red/Blue bombs or a same-type Rainbow clear.
+- Petrified Block: cannot be linked, resists normal/bomb/Rainbow removal, falls with movable tiles, and clears for +40 after settling at the bottom valid row.
+- The board repairs empty playable cells after special-block clears and collapse/refill so the staggered hex silhouette stays filled.
 
 ### AI Designer Agent Updates
 
@@ -67,7 +68,7 @@ The current round format follows a Poko-style 60-second score attack: the player
 3. Clear multiple chains quickly to see combo/Fever behavior.
 4. Watch the enemy HP bar respond to clears.
 5. Try long chains to create and detonate bombs.
-6. Observe frozen, stone, and clock special block behavior.
+6. Observe Frozen, Stone, and Petrified special block behavior.
 
 ## Evidence Location
 
@@ -78,4 +79,4 @@ The current round format follows a Poko-style 60-second score attack: the player
 
 ## Current Evidence Gap
 
-The latest log proves a full 60-second round with valid clears, Fever, bombs, and enemy damage. The next evidence pass should confirm that time-end results now write `clear` when the target score is reached.
+The latest implementation now aligns the special-block rules with runtime tests. The next evidence pass should be one fresh Unity Play session that captures a full round with special blocks, bomb/Rainbow clears, and a final `end` event for portfolio proof.
